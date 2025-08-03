@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">drysync</string>
+    <string name="home">Home</string>
+    <string name="inventory">Inventory</string>
+    <string name="stats">Stats</string>
+    <string name="rack">Rack</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_slot_details">SlotDetailsActivity</string>
+</resources>

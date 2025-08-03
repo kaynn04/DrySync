@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:id="@+id/middle_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp"
+        android:background="@color/white">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Temperature Circle -->
+            <RelativeLayout
+                android:id="@+id/temperature_circle"
+                android:layout_width="277dp"
+                android:layout_height="255dp"
+                android:background="@drawable/circular_background"
+                android:gravity="center"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="60dp">
+
+                <!-- Temperature Text -->
+                <TextView
+                    android:id="@+id/temperature_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25%"
+                    android:textSize="50sp"
+                    android:textColor="#5C4231"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="500dp"
+                android:layout_height="180dp"
+                android:background="@drawable/box_background"
+                android:layout_below="@id/temperature_circle">
+
+            </RelativeLayout>
+        </RelativeLayout>
+
+
+
+    </ScrollView>
+
+
+
+
+</LinearLayout>
