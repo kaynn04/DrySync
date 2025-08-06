@@ -60,9 +60,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Today's Orders"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Active Slots"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Repeat this block 6 times for each stat -->
@@ -87,9 +87,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Completed Jobs"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Inactive Slots"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Repeat this block 6 times for each stat -->
@@ -114,9 +114,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pending Orders"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Drying Complete"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Repeat this block 6 times for each stat -->
@@ -133,17 +133,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="P1000"
-                        android:textStyle="bold"
+                        android:text="5"
+                        android:textColor="@color/brown"
                         android:textSize="24sp"
-                        android:textColor="@color/brown" />
+                        android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Total Revenue"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Still Drying"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Repeat this block 6 times for each stat -->
@@ -168,9 +168,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Active Drivers"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Placeholder"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <!-- Repeat this block 6 times for each stat -->
@@ -195,9 +195,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Today's Bookings"
-                        android:textSize="14sp"
-                        android:textColor="@color/brown" />
+                        android:text="Placeholder"
+                        android:textColor="@color/brown"
+                        android:textSize="14sp" />
                 </LinearLayout>
             </GridLayout>
 

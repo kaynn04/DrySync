@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "380865637206",
+    "firebase_url": "https://drysync-81845-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "drysync-81845",
+    "storage_bucket": "drysync-81845.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380865637206:android:5512fc8ad2653d724fc4f7",
+        "android_client_info": {
+          "package_name": "com.example.drysync"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFdf02H6cSGTGoHS2v2Ud9y-WUqFwsaJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
