@@ -52,16 +52,16 @@
         android:layout_below="@+id/top_nav"
         android:layout_above="@+id/bot_nav"/>
 
-    <!--    Bottom Navigation Bar-->
     <LinearLayout
         android:id="@+id/bot_nav"
         android:layout_width="match_parent"
         android:layout_height="80dp"
         android:layout_alignParentBottom="true"
-        android:background="@color/brown"
+        android:background="@drawable/bg_bottom_nav"
         android:orientation="horizontal"
         android:weightSum="4"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:elevation="8dp">
 
         <!-- Home -->
         <LinearLayout
@@ -71,21 +71,29 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:background="@drawable/nav_item_bg"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
 
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_home" />
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_home"
+                app:tint="@color/nav_icon_tint"
+                android:duplicateParentState="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/home"
-                android:textColor="@color/white"
                 android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:textColor="@color/nav_text_color"
+                android:layout_marginTop="4dp"
+                android:duplicateParentState="true"/>
+
         </LinearLayout>
 
         <!-- Inventory -->
@@ -96,21 +104,28 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:background="@drawable/nav_item_bg"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_inventory"/>
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_inventory"
+                app:tint="@color/nav_icon_tint"
+                android:duplicateParentState="true" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/inventory"
-                android:textColor="@color/white"
                 android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:textColor="@color/nav_text_color"
+                android:layout_marginTop="4dp"
+                android:duplicateParentState="true"/>
         </LinearLayout>
 
         <!-- Stats -->
@@ -121,21 +136,28 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:background="@drawable/nav_item_bg"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_stats" />
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_stats"
+                app:tint="@color/nav_icon_tint"
+                android:duplicateParentState="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/stats"
-                android:textColor="@color/white"
                 android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:textColor="@color/nav_text_color"
+                android:layout_marginTop="4dp"
+                android:duplicateParentState="true"/>
         </LinearLayout>
 
         <!-- Rack -->
@@ -146,23 +168,30 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:background="@drawable/nav_item_bg"
+            android:foreground="?attr/selectableItemBackgroundBorderless">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_rack"
-                android:contentDescription="Rack Icon"/>
+                app:tint="@color/nav_icon_tint"
+                android:duplicateParentState="true"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/rack"
-                android:textColor="@color/white"
                 android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:textColor="@color/nav_text_color"
+                android:layout_marginTop="4dp"
+                android:duplicateParentState="true"/>
         </LinearLayout>
 
     </LinearLayout>
+
 </RelativeLayout>

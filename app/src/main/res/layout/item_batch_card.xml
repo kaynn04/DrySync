@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardUseCompatPadding="true"
+    app:cardCornerRadius="16dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#1F5C4232"
+    app:rippleColor="#145C4232"
+    app:cardBackgroundColor="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Header row: Batch ID + Arrival chip -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvBatchId"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="BATCH-20250817-0001"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#2D1B12"/>
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipArrival"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="Aug 17, 2025"
+                android:textSize="12sp"
+                android:checkable="false"
+                android:clickable="false"
+                android:padding="10dp"
+                app:chipBackgroundColor="@color/brown"
+                android:textColor="@color/chip_arrival_text"
+                app:rippleColor="@color/chip_arrival_ripple"
+                app:chipStrokeColor="@color/chip_arrival_stroke"
+                app:chipStrokeWidth="0dp"/>
+        </LinearLayout>
+
+        <!-- Quantity line -->
+        <TextView
+            android:id="@+id/tvQuantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Total Qty: 120 pcs"
+            android:textSize="14sp"
+            android:textColor="#5C4232"/>
+
+        <!-- Extra line in a soft pill: In rack / Finished / Remaining -->
+        <TextView
+            android:id="@+id/tvExtra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="In rack: 0  •  Finished: 0  •  Remaining: 0"
+            android:textSize="12sp"
+            android:textColor="#6A4A3A"
+            android:background="@drawable/bg_pill"/>
+
+        <!-- Optional Low Stock tag (show/hide in code) -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipLow"
+            style="@style/Widget.MaterialComponents.Chip.Entry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="LOW STOCK"
+            android:textSize="12sp"
+            android:textColor="#C62828"
+            android:checkable="false"
+            android:clickable="false"
+            android:visibility="gone"
+            app:chipBackgroundColor="@drawable/bg_chip_low"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

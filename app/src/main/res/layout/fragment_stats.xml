@@ -1,44 +1,382 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
-
-    <Spinner
-        android:id="@+id/stat_type_spinner"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/spinner_background"
-        android:padding="8dp"
-        android:popupBackground="@color/white"
-        android:textAlignment="center" />
+    android:background="@color/white"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/stat_type_spinner"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <ScrollView
-            android:id="@+id/middle_content"
+        <!-- Card: Temperature -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp"
-            android:background="@color/white">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@android:color/white">
 
-            <FrameLayout
-                android:id="@+id/stat_content_container"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:gravity="center_horizontal">
 
-        </ScrollView>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Temperature"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="@color/brown"
+                    android:layout_marginBottom="12dp"/>
+
+                <FrameLayout
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_marginBottom="8dp">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/tempProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:indeterminate="false"
+                        android:max="60"
+                        android:progress="25"
+                        app:indicatorSize="220dp"
+                        app:trackThickness="16dp"
+                        app:trackColor="#FFEDE3"
+                        app:indicatorColor="@color/brown"/>
+
+                    <TextView
+                        android:id="@+id/temperature_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="25°C"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/brown"
+                        android:layout_gravity="center"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvTempTarget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Target: 20–35°C"
+                    android:textColor="#8A5C4231"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvTempLastUpdated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Last update: —"
+                    android:textColor="#8A5C4231"/>
+
+                <!-- 2-column grid of mini tiles -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:useDefaultMargins="true"
+                    android:alignmentMode="alignMargins">
+
+                    <!-- Min -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvTempMin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="22°C"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Min"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Max -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvTempMax"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="31°C"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Max"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Avg -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvTempAvg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="26.4°C"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Average"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Trend vs 1h -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvTempTrend"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+1.2°C"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Change (1h)"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+                </GridLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card: Humidity -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:gravity="center_horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Humidity"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="@color/brown"
+                    android:layout_marginBottom="12dp"/>
+
+                <FrameLayout
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_marginBottom="8dp">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/humidProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:indeterminate="false"
+                        android:max="100"
+                        android:progress="62"
+                        app:indicatorSize="220dp"
+                        app:trackThickness="16dp"
+                        app:trackColor="#FFEDE3"
+                        app:indicatorColor="@color/brown"/>
+
+                    <TextView
+                        android:id="@+id/humidity_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="62%"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/brown"
+                        android:layout_gravity="center"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvHumidTarget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ideal: 45% – 60%"
+                    android:textColor="#8A5C4231"
+                    android:layout_marginBottom="4dp"/>
+
+                <TextView
+                    android:id="@+id/tvHumidLastUpdated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Last update: —"
+                    android:textColor="#8A5C4231"/>
+
+                <!-- Quick stats grid -->
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="2"
+                    android:useDefaultMargins="true"
+                    android:alignmentMode="alignMargins">
+
+                    <!-- Min -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvHumidMin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="48%"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Min (24h)"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Max -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvHumidMax"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="72%"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Max (24h)"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Avg -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvHumidAvg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="58%"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Average (24h)"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+
+                    <!-- Trend vs 1h -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_columnWeight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:background="@drawable/box_background"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/tvHumidTrend"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+3%"
+                            android:textStyle="bold"
+                            android:textSize="20sp"
+                            android:textColor="@color/brown"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Change (1h)"
+                            android:textColor="#8A5C4231"/>
+                    </LinearLayout>
+                </GridLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
-
-
-
-
-</RelativeLayout>
+</androidx.core.widget.NestedScrollView>

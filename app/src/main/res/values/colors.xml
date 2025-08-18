@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- your existing colors -->
     <color name="black">#FF000000</color>
     <color name="white">#F4F1ED</color>
     <color name="brown">#5C4232</color>
     <color name="inner_circle">#F2EDE4</color>
+    <color name="card_color">#ECE7E1</color>
+
+    <!-- nav bar palette -->
+    <color name="nav_bar">#5A3E2B</color>
+    <color name="nav_bar_stroke">#71533E</color>        <!-- MISSING: add this -->
+
+    <!-- icon/label tints for dark bar with light icons -->
+    <color name="nav_icon_selected">#FFFFFFFF</color>    <!-- MISSING: add this -->
+    <color name="nav_icon_unselected">#B3FFFFFF</color>  <!-- you can keep your old value; ensure it exists -->
+    <color name="nav_text_selected">#FFFFFFFF</color>    <!-- MISSING: add this -->
+    <color name="nav_unselected_text">#CCFFFFFF</color>  <!-- ensure it exists -->
+
+    <!-- optional (unused for light icons, safe to keep) -->
+    <color name="nav_selected_fg">#2D1B12</color>
 </resources>

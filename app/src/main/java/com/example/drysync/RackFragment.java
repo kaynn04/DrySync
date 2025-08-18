@@ -91,7 +91,7 @@ public class RackFragment extends Fragment {
 
             GridLayout.LayoutParams params = new GridLayout.LayoutParams();
             params.width = 0;
-            params.height = 200;
+            params.height = 350;
             params.bottomMargin = 50;
             params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
             params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
