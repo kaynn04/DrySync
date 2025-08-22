@@ -1,0 +1,16 @@
+<!-- res/menu/drawer_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/group_account">
+        <item android:id="@+id/nav_profile" android:title="Profile" />
+        <item android:id="@+id/nav_notifications" android:title="Notifications" />
+    </group>
+    <group android:id="@+id/group_tools">
+        <item android:id="@+id/nav_settings" android:title="Settings" />
+        <item android:id="@+id/nav_help" android:title="Help and Support" />
+    </group>
+    <group android:id="@+id/group_info">
+        <item android:id="@+id/nav_about" android:title="About" />
+        <item android:id="@+id/nav_privacy" android:title="Privacy Policy" />
+    </group>
+    <item android:id="@+id/nav_logout" android:title="Log out" />
+</menu>
