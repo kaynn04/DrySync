@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthCredential;
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -109,23 +111,40 @@ public class ProfileFragment extends Fragment {
 
     private void loadFromFirebase() {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) {
-            toast("Not logged in");
-            return;
-        }
-        if (user.getDisplayName() != null) etName.setText(user.getDisplayName());
-        if (user.getEmail() != null) etEmail.setText(user.getEmail());
-        // If you want to show remote avatar: use Glide/Picasso with user.getPhotoUrl()
+        if (user == null) { toast("Not logged in"); return; }
 
-        DocumentReference ref = db.collection("users").document(user.getUid());
-        ref.get().addOnSuccessListener(snap -> {
-            if (snap.exists()) {
-                String phone = snap.getString("phone");
-                String photo = snap.getString("photoUrl");
-                if (!TextUtils.isEmpty(phone)) etPhone.setText(phone);
-                // if (!TextUtils.isEmpty(photo)) Glide.with(this).load(photo).into(imgAvatar);
-                uploadedPhotoUrl = photo;
+        user.reload().addOnCompleteListener(t -> {
+           if(!TextUtils.isEmpty(user.getDisplayName())) etName.setText(user.getDisplayName());
+           if(!TextUtils.isEmpty(user.getEmail())) etEmail.setText(user.getEmail());
+
+//           1. Try Auth photoUrl first
+            Uri authPhoto = user.getPhotoUrl();
+            if (authPhoto != null) {
+//                load remote image with Glide
+                Glide.with(this).load(authPhoto.toString())
+                        .placeholder(R.drawable.profile)
+                        .error(R.drawable.profile)
+                        .circleCrop()
+                        .into(imgAvatar);
             }
+
+//            2. Read Firestore in case you mirrored it there
+            DocumentReference ref = db.collection("users").document(user.getUid());
+            ref.get().addOnSuccessListener(snap -> {
+                if(snap.exists()) {
+                    String phone = snap.getString("phone");
+                    if (!TextUtils.isEmpty(phone)) etPhone.setText(phone);
+
+                    String photoUrl = snap.getString("photoUrl");
+                    if (!TextUtils.isEmpty(photoUrl)) {
+                        Glide.with(this).load(photoUrl)
+                                .placeholder(R.drawable.profile)
+                                .error(R.drawable.profile)
+                                .circleCrop()
+                                .into(imgAvatar);
+                    }
+                }
+            });
         });
     }
 

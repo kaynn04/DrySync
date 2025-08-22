@@ -21,7 +21,13 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.database.*;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -65,7 +71,7 @@ public class BatchListFragment extends Fragment {
         adapter = new BatchAdapter(this::showEditDialog);
         recycler.setAdapter(adapter);
 
-        // Firebase ref to /batches
+        // Firebase ref to /batches   (keep lowercase to match your database)
         batchesRef = FirebaseDatabase.getInstance().getReference("batches");
 
         // Live subscribe to /batches
@@ -73,7 +79,7 @@ public class BatchListFragment extends Fragment {
             @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<WoodBatch> list = new ArrayList<>();
                 for (DataSnapshot child : snapshot.getChildren()) {
-                    // Try POJO first (requires no-arg ctor + setters)
+                    // Try POJO first
                     WoodBatch wb = child.getValue(WoodBatch.class);
 
                     // Fallback/manual mapping (and alias key support)
@@ -92,15 +98,12 @@ public class BatchListFragment extends Fragment {
                     );
 
                     if (wb == null) {
-                        // Build manually if POJO mapping failed (e.g., no setters)
                         if (id != null && total != null && arrival != null) {
                             wb = new WoodBatch(id, total, arrival);
-                            // only set if your model has these methods; ignore otherwise
                             try { wb.setInRackCount(inRack != null ? inRack : 0); } catch (Throwable ignored) {}
                             try { wb.setFinishedCount(finished != null ? finished : 0); } catch (Throwable ignored) {}
                         }
                     } else {
-                        // POJO mapped — but make sure aliases also flow into fields if present
                         try {
                             if (inRack != null)    wb.setInRackCount(inRack);
                             if (finished != null)  wb.setFinishedCount(finished);
@@ -159,6 +162,42 @@ public class BatchListFragment extends Fragment {
     }
 
     // ---------- Add: auto date, only quantity ----------
+
+    private interface IdCallback { void onId(@Nullable String id, @Nullable String error); }
+
+    /** Generate B-YYYYMMDD-#### in Asia/Manila using a Firebase transaction at /counters/batches/YYYYMMDD */
+    private void generateBatchIdManilaTxn(@NonNull IdCallback cb) {
+        TimeZone tz = TimeZone.getTimeZone("Asia/Manila");
+        Calendar cal = Calendar.getInstance(tz);
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd", Locale.US);
+        df.setTimeZone(tz);
+        String dateKey = df.format(cal.getTime());
+
+        DatabaseReference counterRef = FirebaseDatabase.getInstance()
+                .getReference("counters").child("batches").child(dateKey);
+
+        counterRef.runTransaction(new Transaction.Handler() {
+            @NonNull @Override
+            public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                Long v = currentData.getValue(Long.class);
+                if (v == null) v = 0L;
+                currentData.setValue(v + 1L);
+                return Transaction.success(currentData);
+            }
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot snap) {
+                if (error != null || !committed || snap == null) {
+                    cb.onId(null, error != null ? error.getMessage() : "Counter not committed");
+                    return;
+                }
+                Long seqL = snap.getValue(Long.class);
+                long seq = (seqL == null ? 1L : seqL);
+                String id = String.format(Locale.US, "B-%s-%04d", dateKey, seq);
+                cb.onId(id, null);
+            }
+        });
+    }
+
     private void showAddDialogAutoDate() {
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_add_batch, null, false);
@@ -183,22 +222,43 @@ public class BatchListFragment extends Fragment {
         if (c200 != null) c200.setOnClickListener(chipClick);
 
         final long arrivalNow = System.currentTimeMillis();
-        String autoId = generateBatchId();
-        tvId.setText(autoId);
+        final String[] idHolder = new String[1]; // store async-generated ID
 
+        // Disable Save until we have both a valid qty and an ID
         btnSave.setEnabled(false);
+        tvId.setText("Generating…");
+
+        // Kick off async ID generation (with fallback to random if it fails)
+        generateBatchIdManilaTxn((id, err) -> {
+            if (!isAdded()) return;
+            if (err != null || id == null) {
+                // Fallback to random to keep UX unblocked
+                Date now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Manila")).getTime();
+                String datePart = new SimpleDateFormat("yyyyMMdd", Locale.US).format(now);
+                int serial = new Random().nextInt(9000) + 1000; // 1000–9999
+                id = "B-" + datePart + "-" + serial;
+            }
+            idHolder[0] = id;
+            tvId.setText(id);
+            // Re-evaluate Save enabled state after ID arrives
+            Editable e = etQty.getText();
+            boolean qtyOk = false;
+            if (e != null) {
+                try { qtyOk = Integer.parseInt(e.toString().trim()) > 0; } catch (Exception ignored) {}
+            }
+            btnSave.setEnabled(qtyOk);
+        });
+
         etQty.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
             @Override public void afterTextChanged(Editable e) {
-                btnSave.setEnabled(isValidQty(e));
+                boolean qtyOk = false;
+                if (e != null) {
+                    try { qtyOk = Integer.parseInt(e.toString().trim()) > 0; } catch (Exception ignored) {}
+                }
+                btnSave.setEnabled(qtyOk && idHolder[0] != null);
                 if (etQty.getError() != null) etQty.setError(null);
-            }
-            private boolean isValidQty(Editable e) {
-                if (e == null) return false;
-                String t = e.toString().trim();
-                if (t.isEmpty()) return false;
-                try { return Integer.parseInt(t) > 0; } catch (NumberFormatException ex) { return false; }
             }
         });
 
@@ -208,12 +268,16 @@ public class BatchListFragment extends Fragment {
                         .create();
 
         btnSave.setOnClickListener(v -> {
+            if (idHolder[0] == null) {
+                etQty.setError("Generating ID, please wait…");
+                return;
+            }
             String qtyStr = etQty.getText() == null ? "" : etQty.getText().toString().trim();
             Integer qty = null;
             try { qty = Integer.parseInt(qtyStr); } catch (NumberFormatException ignored) {}
             if (qty == null || qty <= 0) { etQty.setError("Enter valid quantity"); return; }
 
-            // Build new batch object
+            String autoId = idHolder[0];
             WoodBatch newBatch = new WoodBatch(autoId, qty, arrivalNow);
 
             // Write to /batches/{batchId}
@@ -290,8 +354,7 @@ public class BatchListFragment extends Fragment {
                 batchesRef.child(batch.getBatchId())
                         .removeValue()
                         .addOnSuccessListener(unused -> {
-                            // Optional: show a toast/snackbar here
-                            alert.dismiss(); // list auto-refreshes via your listener
+                            alert.dismiss(); // list auto-refreshes
                         })
                         .addOnFailureListener(e -> etFinished.setError("Delete failed: " + e.getMessage()));
                 return;
@@ -313,7 +376,6 @@ public class BatchListFragment extends Fragment {
         btnCancel.setOnClickListener(v -> alert.dismiss());
         alert.show();
     }
-
 
     // ----- helpers -----
     private int parseInt(Editable e) {
@@ -344,11 +406,12 @@ public class BatchListFragment extends Fragment {
         } catch (Exception ignored) {}
     }
 
+    // (Keep only if you want a local fallback elsewhere; the new flow uses generateBatchIdManilaTxn)
     private String generateBatchId() {
         Date now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Manila")).getTime();
         String datePart = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(now);
         int serial = new Random().nextInt(9000) + 1000; // 1000–9999
-        return "BATCH-" + datePart + "-" + serial;
+        return "B-" + datePart + "-" + serial;
     }
 
     private Integer safeInt(Object o) {

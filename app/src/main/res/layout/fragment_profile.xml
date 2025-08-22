@@ -96,7 +96,12 @@
                 android:textColor="#2D1B12"
                 android:textColorHint="#995C4232"
                 android:backgroundTint="@android:color/transparent"
-                android:textCursorDrawable="@drawable/cursor_brown"/>
+                android:textCursorDrawable="@drawable/cursor_brown"
+                android:focusable="false"
+                android:clickable="false"
+                android:cursorVisible="false"
+                android:longClickable="false"
+                android:enabled="false"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Phone -->
