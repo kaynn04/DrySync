@@ -4,8 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="3dp"
     app:strokeColor="@color/brown"
     app:strokeWidth="1dp"
     app:cardBackgroundColor="@android:color/white">
@@ -13,8 +13,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@android:color/white">
+        android:orientation="vertical">
 
         <!-- Header -->
         <LinearLayout
@@ -23,8 +22,8 @@
             android:background="@color/brown"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp"
             android:orientation="vertical">
 
             <TextView
@@ -33,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:text="New Inventory Batch"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textColor="@android:color/white"/>
 
             <TextView
@@ -42,10 +41,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="BATCH-XXXX"
-                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textSize="13sp"
                 android:textColor="@android:color/white"/>
 
-            <!-- Arrival date is automatic now -->
             <TextView
                 android:id="@+id/tvArrivalAuto"
                 android:layout_width="wrap_content"
@@ -56,96 +55,95 @@
                 android:textColor="@android:color/white"/>
         </LinearLayout>
 
-        <!-- Body -->
+        <!-- Scrollable Body -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Total (auto) -->
+                <TextView
+                    android:id="@+id/tvTotalAuto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total: 0 pcs"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:textColor="@android:color/black"/>
+
+                <!-- Section label -->
+                <TextView
+                    android:id="@+id/tvSizesHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Add sizes (Qty, Length × Width)"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"/>
+
+                <!-- Container for dynamic rows -->
+                <LinearLayout
+                    android:id="@+id/sizesContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="6dp" />
+
+                <!-- Add row button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddSize"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:text="Add size"
+                    android:textAllCaps="false"
+                    android:insetTop="8dp"
+                    android:insetBottom="8dp"
+                    app:strokeColor="@color/brown"
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconPadding="8dp"
+                    app:iconGravity="textStart" />
+
+                <!-- Live preview -->
+                <TextView
+                    android:id="@+id/tvSizePreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:padding="10dp"
+                    android:background="@android:color/transparent"
+                    android:text="—"
+                    android:textSize="13sp"
+                    android:textColor="@android:color/black"/>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- Sticky footer actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Quantity input -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilQuantity"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Total quantity (pcs)"
-                app:boxBackgroundMode="outline"
-                app:boxBackgroundColor="@android:color/transparent"
-                app:boxStrokeColor="@color/brown"
-                app:hintTextColor="@color/brown"
-                app:counterEnabled="true"
-                app:counterMaxLength="5"
-                app:useMaterialThemeColors="false">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etQuantity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:imeOptions="actionDone"
-                    android:textColor="@android:color/black"
-                    android:backgroundTint="@android:color/transparent"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupQty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:singleLine="true"
-                app:chipSpacingHorizontal="8dp">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipQty50"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="50"
-                    android:clickable="true"
-                    android:checkable="false"
-                    app:useMaterialThemeColors="false"
-                    app:chipBackgroundColor="@color/brown"
-                    android:textColor="@color/white"
-                    />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipQty100"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="100"
-                    android:clickable="true"
-                    android:checkable="false"
-                    app:useMaterialThemeColors="false"
-                    app:chipBackgroundColor="@color/brown"
-                    android:textColor="@color/white"/>
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipQty200"
-                    style="@style/Widget.MaterialComponents.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="200"
-                    android:clickable="true"
-                    android:checkable="false"
-                    app:useMaterialThemeColors="false"
-                    app:chipBackgroundColor="@color/brown"
-                    android:textColor="@color/white"/>
-            </com.google.android.material.chip.ChipGroup>
-
-
-            <!-- Save -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"
-                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="Save"
-                app:useMaterialThemeColors="false"
+                android:textAllCaps="false"
+                android:enabled="false"
                 app:backgroundTint="@color/brown"
-                android:textColor="@android:color/white"/>
+                android:textColor="@android:color/white"
+                android:insetTop="10dp"
+                android:insetBottom="10dp"/>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

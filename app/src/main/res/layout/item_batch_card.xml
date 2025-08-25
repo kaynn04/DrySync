@@ -37,22 +37,6 @@
                 android:textStyle="bold"
                 android:textSize="16sp"
                 android:textColor="#2D1B12"/>
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipArrival"
-                style="@style/Widget.MaterialComponents.Chip.Action"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="Aug 17, 2025"
-                android:textSize="12sp"
-                android:checkable="false"
-                android:clickable="false"
-                android:padding="10dp"
-                app:chipBackgroundColor="@color/brown"
-                android:textColor="@color/chip_arrival_text"
-                app:rippleColor="@color/chip_arrival_ripple"
-                app:chipStrokeColor="@color/chip_arrival_stroke"
-                app:chipStrokeWidth="0dp"/>
         </LinearLayout>
 
         <!-- Quantity line -->

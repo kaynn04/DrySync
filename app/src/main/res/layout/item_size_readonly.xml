@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- Title line: 4 ft × 3 in  •  Qty: 10 pcs -->
+    <TextView
+        android:id="@+id/tvSizeTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="4 ft × 3 in  •  Qty: 10 pcs"
+        android:textSize="13sp"
+        android:textColor="@android:color/black"/>
+
+    <!-- Badges line -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/badgeInRack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="In rack: 0"
+            android:textSize="12sp"
+            android:textColor="#5C4232"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_pill_neutral"/>
+
+        <View android:layout_width="8dp" android:layout_height="0dp"/>
+
+        <TextView
+            android:id="@+id/badgeFinished"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Finished: 0"
+            android:textSize="12sp"
+            android:textColor="#5C4232"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_pill_neutral"/>
+
+        <View android:layout_width="8dp" android:layout_height="0dp"/>
+
+        <TextView
+            android:id="@+id/badgeRemaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remaining: 0"
+            android:textSize="12sp"
+            android:textColor="#5C4232"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_pill_neutral"/>
+    </LinearLayout>
+</LinearLayout>

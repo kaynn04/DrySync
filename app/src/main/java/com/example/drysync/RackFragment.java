@@ -14,11 +14,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -32,14 +32,14 @@ import java.util.List;
 
 public class RackFragment extends Fragment {
 
-    // Track last known status per slot to detect transitions
     private final HashMap<Integer, String> lastStatus = new HashMap<>();
-    // Prevent duplicate pickers for the same slot while one dialog is open
-    private final HashSet<Integer> dialogOpenForSlot = new HashSet<>();
+    private final HashSet<Integer> assignDialogOpenFor = new HashSet<>();
+    private final HashSet<Integer> sizeDialogOpenFor   = new HashSet<>();
+    private final HashSet<Integer> finishDialogOpenFor = new HashSet<>();
+    private final HashSet<Integer> promptedComplete    = new HashSet<>();
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_rack, container, false);
     }
 
@@ -59,14 +59,14 @@ public class RackFragment extends Fragment {
             final int slot = i;
             title.setText("Wood Slot " + slot);
 
-            // --- SENSOR STATUS (drives all actions) ---
+            // -------- Sensor status listener --------
             FirebaseHelper.retrieveStringData("Sensors/" + slot + "/Status", new FirebaseHelper.StringDataCallback() {
                 @Override public void onStringReceived(String value) {
                     String prev = lastStatus.get(slot);
-                    String now = value == null ? "" : value.trim();
+                    String now = (value == null ? "" : value.trim());
                     lastStatus.put(slot, now);
 
-                    // UI look
+                    // UI
                     if ("Inactive".equalsIgnoreCase(now)) {
                         tvValue.setVisibility(View.INVISIBLE);
                         statusSwitch.setVisibility(View.INVISIBLE);
@@ -80,20 +80,30 @@ public class RackFragment extends Fragment {
                         title.setTextColor(Color.WHITE);
                         tvValue.setTextColor(Color.WHITE);
                     }
-                    statusSwitch.setChecked("Complete".equalsIgnoreCase(now));
 
-                    // --- Transition-based logic ---
-                    // Became ACTIVE -> prompt to assign (only time user can choose a batch)
+                    // Switch reflects "Complete"
+                    boolean isComplete = "Complete".equalsIgnoreCase(now);
+                    if (statusSwitch.isChecked() != isComplete) {
+                        statusSwitch.setOnCheckedChangeListener(null);
+                        statusSwitch.setChecked(isComplete);
+                        statusSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+                            if (!btn.isPressed()) return;
+                            if (isChecked) confirmFinish(slot, null);
+                        });
+                    }
+
+                    // Transitions
                     if (!equalsIgnoreCase(prev, "Active") && "Active".equalsIgnoreCase(now)) {
+                        // Only prompt if NOT fully assigned
                         maybePromptAssign(slot);
                     }
-
-                    // Became COMPLETE -> ask to finish (if assigned)
                     if (!equalsIgnoreCase(prev, "Complete") && "Complete".equalsIgnoreCase(now)) {
                         maybePromptFinish(slot);
+                        promptedComplete.add(slot);
                     }
-
-                    // Returned to INACTIVE from something else -> auto action
+                    if ("Complete".equalsIgnoreCase(prev) && !"Complete".equalsIgnoreCase(now)) {
+                        promptedComplete.remove(slot);
+                    }
                     if (prev != null && !"Inactive".equalsIgnoreCase(prev) && "Inactive".equalsIgnoreCase(now)) {
                         handleAutoOnInactive(slot, prev);
                     }
@@ -103,7 +113,7 @@ public class RackFragment extends Fragment {
                 }
             });
 
-            // --- SENSOR VALUE (display only) ---
+            // Sensor value
             FirebaseHelper.retrieveFloatData("Sensors/" + slot + "/Value", new FirebaseHelper.FloatDataCallback() {
                 @Override public void onFloatReceived(float value) { tvValue.setText(value + "%"); }
                 @Override public void onError(String errorMessage) {
@@ -112,18 +122,22 @@ public class RackFragment extends Fragment {
                 }
             });
 
-            // --- CARD TAP: no manual assign when Inactive; info only when Active/Complete ---
+            // -------- Card tap behavior --------
             slotView.setOnClickListener(v -> {
                 String status = lastStatus.get(slot);
                 if (status == null) status = "Inactive";
 
-                DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+                DatabaseReference slotRef = FirebaseDatabase.getInstance()
+                        .getReference("RackSlots").child(String.valueOf(slot));
+
                 String finalStatus = status;
                 slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override public void onDataChange(@NonNull DataSnapshot ds) {
                         String batchId = ds.child("batchId").getValue(String.class);
-                        Integer pcs = ds.child("pcs").getValue(Integer.class);
+                        Integer pcs    = ds.child("pcs").getValue(Integer.class);
+                        String sizeKey = ds.child("sizeKey").getValue(String.class);
                         boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
+                        boolean hasSize = (sizeKey != null && !sizeKey.trim().isEmpty());
 
                         if ("Inactive".equalsIgnoreCase(finalStatus)) {
                             toast("Slot " + slot + " is empty. Wait for sensor to become Active.");
@@ -131,21 +145,19 @@ public class RackFragment extends Fragment {
                         }
 
                         if ("Active".equalsIgnoreCase(finalStatus)) {
-                            if (hasAssignment) {
-                                toast("Slot " + slot + " is occupied by " + batchId + ".");
+                            if (!hasAssignment) {
+                                showAssignWizard(slot); // Batch -> Size -> Confirm
+                            } else if (!hasSize) {
+                                showSizeStep(slot, batchId); // only size missing
                             } else {
-                                // Slot is Active and unassigned (user may have missed the popup) — show picker
-                                showAssignDialogOne(slot);
+                                showSizePickerForBatch(slot, batchId); // change size if needed
                             }
                             return;
                         }
 
                         if ("Complete".equalsIgnoreCase(finalStatus)) {
-                            if (hasAssignment) {
-                                promptFinish(slot, batchId);
-                            } else {
-                                toast("Slot " + slot + " is Complete (no batch recorded).");
-                            }
+                            if (hasAssignment) confirmFinish(slot, batchId);
+                            else toast("Slot " + slot + " is Complete (no batch recorded).");
                         }
                     }
                     @Override public void onCancelled(@NonNull DatabaseError error) {
@@ -154,7 +166,13 @@ public class RackFragment extends Fragment {
                 });
             });
 
-            // Layout params for grid cell
+            // Manual toggle to Complete
+            statusSwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+                if (!btn.isPressed()) return;
+                if (isChecked) confirmFinish(slot, null);
+            });
+
+            // Grid params
             GridLayout.LayoutParams params = new GridLayout.LayoutParams();
             params.width = 0; params.height = 350; params.bottomMargin = 50;
             params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
@@ -164,121 +182,240 @@ public class RackFragment extends Fragment {
         }
     }
 
-    // ---- Auto actions on returning to Inactive ----
-    private void handleAutoOnInactive(int slot, String previousStatus) {
-        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+    // ------------------ Prompt only when needed ------------------
+
+    /** Only opens a dialog if the slot is NOT fully assigned (batch + sizeKey). */
+    private void maybePromptAssign(int slot) {
+        if (assignDialogOpenFor.contains(slot)) return;
+
+        DatabaseReference slotRef = FirebaseDatabase.getInstance()
+                .getReference("RackSlots").child(String.valueOf(slot));
+
         slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot ds) {
                 String batchId = ds.child("batchId").getValue(String.class);
-                Integer pcs = ds.child("pcs").getValue(Integer.class);
-                boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
+                Integer pcs    = ds.child("pcs").getValue(Integer.class);
+                String sizeKey = ds.child("sizeKey").getValue(String.class);
 
-                if (!hasAssignment) return; // nothing to do
+                boolean hasBatch   = (batchId != null && pcs != null && pcs > 0);
+                boolean hasSize    = (sizeKey != null && !sizeKey.trim().isEmpty());
+                boolean fullAssign = hasBatch && hasSize;
 
-                if ("Complete".equalsIgnoreCase(previousStatus)) {
-                    // It was dry, and now wood was removed → auto-finish
-                    FirebaseHelper.finishSlot(slot, err -> {
-                        if (err != null) toast("Auto-finish failed: " + err);
-                        else toast("Slot " + slot + " auto-finished after removal.");
-                    });
+                if (!isAdded() || fullAssign) return; // do nothing if already complete assignment
+
+                if (hasBatch) {
+                    // batch exists but missing size → go directly to size step
+                    showSizeStep(slot, batchId);
                 } else {
-                    // It was active but not completed → wood removed early → auto-clear (return to remaining)
-                    FirebaseHelper.clearSlot(slot, err -> {
-                        if (err != null) toast("Auto-clear failed: " + err);
-                        else toast("Slot " + slot + " auto-cleared.");
-                    });
+                    // no assignment → run full wizard
+                    showAssignWizard(slot);
                 }
             }
             @Override public void onCancelled(@NonNull DatabaseError error) { /* no-op */ }
         });
     }
 
-    // ---- Prompt to assign exactly ONE piece (only allowed when Active) ----
-    private void maybePromptAssign(int slot) {
-        if (dialogOpenForSlot.contains(slot)) return;
+    // ------------------ Assign Wizard: Batch -> Size -> Confirm (single write) ------------------
 
-        // If already assigned, skip
-        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
-        slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override public void onDataChange(@NonNull DataSnapshot ds) {
-                String batchId = ds.child("batchId").getValue(String.class);
-                Integer pcs = ds.child("pcs").getValue(Integer.class);
-                boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
-                if (!hasAssignment && isAdded()) showAssignDialogOne(slot);
-            }
-            @Override public void onCancelled(@NonNull DatabaseError error) { /* no-op */ }
-        });
-    }
-
-    // ---- Prompt to finish when sensor becomes Complete ----
-    private void maybePromptFinish(int slot) {
-        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
-        slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override public void onDataChange(@NonNull DataSnapshot ds) {
-                String batchId = ds.child("batchId").getValue(String.class);
-                Integer pcs = ds.child("pcs").getValue(Integer.class);
-                boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
-                if (hasAssignment && isAdded()) promptFinish(slot, batchId);
-            }
-            @Override public void onCancelled(@NonNull DatabaseError error) { /* no-op */ }
-        });
-    }
-
-    private void promptFinish(int slot, String batchId) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Slot " + slot + " is COMPLETE")
-                .setMessage("Move 1 piece from In-Rack → Finished for batch " + batchId + "?")
-                .setPositiveButton("Mark Finished", (d, w) ->
-                        FirebaseHelper.finishSlot(slot, err -> {
-                            if (err != null) toast("Finish failed: " + err);
-                            else toast("Batch updated and slot cleared.");
-                        }))
-                .setNegativeButton("Later", null)
-                .show();
-    }
-
-    // ---- Batch picker (ONE piece) ----
-    private void showAssignDialogOne(int slot) {
-        if (!isAdded()) return;
-        if (dialogOpenForSlot.contains(slot)) return;
+    private void showAssignWizard(int slot) {
+        if (assignDialogOpenFor.contains(slot)) return;
+        assignDialogOpenFor.add(slot);
 
         FirebaseHelper.loadBatchesOnce((allBatches, err) -> {
-            if (err != null) { toast("Load batches failed: " + err); return; }
+            if (err != null) { toast("Load batches failed: " + err); assignDialogOpenFor.remove(slot); return; }
 
-            // Show only batches with remaining > 0; if none, show all (but block assign)
             List<WoodBatch> selectable = new ArrayList<>();
             for (WoodBatch wb : allBatches) if (wb != null && wb.getRemaining() > 0) selectable.add(wb);
-            final List<WoodBatch> display = selectable.isEmpty() ? allBatches : selectable;
-            if (display.isEmpty()) { toast("No batches found under /Batches."); return; }
+            final List<WoodBatch> batches = selectable.isEmpty() ? allBatches : selectable;
+            if (batches.isEmpty()) { toast("No batches found."); assignDialogOpenFor.remove(slot); return; }
 
-            String[] labels = new String[display.size()];
-            for (int i = 0; i < display.size(); i++) {
-                WoodBatch wb = display.get(i);
-                int rem = wb.getRemaining();
-                labels[i] = wb.getBatchId() + " • remaining: " + rem + (rem <= 0 ? " (FULL)" : "");
+            String[] labels = new String[batches.size()];
+            for (int i = 0; i < batches.size(); i++) {
+                WoodBatch wb = batches.get(i);
+                labels[i] = wb.getBatchId() + " • remaining: " + wb.getRemaining();
             }
 
-            dialogOpenForSlot.add(slot);
-
-            final int[] selected = {0};
-            androidx.appcompat.app.AlertDialog dlg = new MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Assign Batch to Slot " + slot)
-                    .setSingleChoiceItems(labels, 0, (d, which) -> selected[0] = which)
-                    .setPositiveButton("Assign", (d, w) -> {
-                        WoodBatch chosen = display.get(selected[0]);
-                        if (chosen.getRemaining() <= 0) { toast("Selected batch is FULL. Pick another."); return; }
-                        FirebaseHelper.assignBatchToSlot(chosen.getBatchId(), slot, 1, resErr -> {
-                            if (resErr != null) toast("Assign failed: " + resErr);
-                            else toast("Assigned 1 piece from " + chosen.getBatchId() + " to slot " + slot);
-                        });
+            final int[] selBatch = {0};
+            AlertDialog step1 = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Assign to Slot " + slot + " — Pick Batch")
+                    .setSingleChoiceItems(labels, 0, (d, which) -> selBatch[0] = which)
+                    .setPositiveButton("Next", (d, w) -> {
+                        String batchId = batches.get(selBatch[0]).getBatchId();
+                        showSizeStep(slot, batchId);
                     })
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton("Cancel", (d,w) -> assignDialogOpenFor.remove(slot))
                     .create();
 
-            dlg.setOnDismissListener(x -> dialogOpenForSlot.remove(slot));
-            dlg.show();
+            step1.show();
         });
     }
+
+    private void showSizeStep(int slot, @NonNull String batchId) {
+        FirebaseHelper.loadBatchSizeLines(batchId, (lines, err2) -> {
+            if (err2 != null) { toast("Load sizes failed: " + err2); assignDialogOpenFor.remove(slot); return; }
+
+            List<FirebaseHelper.SizeLine> avail = new ArrayList<>();
+            for (FirebaseHelper.SizeLine sl : lines) if (sl.remaining() > 0) avail.add(sl);
+            if (avail.isEmpty()) { toast("No available sizes in " + batchId + "."); assignDialogOpenFor.remove(slot); return; }
+
+            String[] sizeLabels = new String[avail.size()];
+            for (int i = 0; i < avail.size(); i++) {
+                FirebaseHelper.SizeLine sl = avail.get(i);
+                sizeLabels[i] = sl.remaining() + " pcs • " + sl.label();
+            }
+            final int[] selSize = {0};
+
+            AlertDialog step2 = new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Assign to Slot " + slot + " — Pick Size")
+                    .setSingleChoiceItems(sizeLabels, 0, (d, which) -> selSize[0] = which)
+                    .setPositiveButton("Confirm", (d, w) -> {
+                        FirebaseHelper.SizeLine chosen = avail.get(selSize[0]);
+                        // SINGLE write (no double minus)
+                        FirebaseHelper.assignBatchAndSize(batchId, slot, chosen.key, err3 -> {
+                            if (err3 != null) toast("Assign failed: " + err3);
+                            else toast("Assigned " + batchId + " (" + chosen.label() + ") to slot " + slot);
+                        });
+                        assignDialogOpenFor.remove(slot);
+                    })
+                    .setNegativeButton("Back", (d,w) -> {
+                        // back to batch step (keep guard set)
+                        showAssignWizard(slot);
+                    })
+                    .setOnDismissListener(x -> assignDialogOpenFor.remove(slot))
+                    .create();
+
+            step2.show();
+        });
+    }
+
+    // ------------------ Complete / Auto logic ------------------
+
+    private void maybePromptFinish(int slot) {
+        if (finishDialogOpenFor.contains(slot)) return;
+        if (promptedComplete.contains(slot)) return;
+        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+        slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot ds) {
+                String batchId = ds.child("batchId").getValue(String.class);
+                Integer pcs = ds.child("pcs").getValue(Integer.class);
+                if (batchId != null && pcs != null && pcs > 0 && isAdded()) confirmFinish(slot, batchId);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    private void handleAutoOnInactive(int slot, String previousStatus) {
+        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+        slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot ds) {
+                String batchId = ds.child("batchId").getValue(String.class);
+                Integer pcs    = ds.child("pcs").getValue(Integer.class);
+                boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
+                if (!hasAssignment) return;
+
+                if ("Complete".equalsIgnoreCase(previousStatus)) {
+                    FirebaseHelper.finishSlot(slot, err -> {
+                        if (err != null) toast("Auto-finish failed: " + err);
+                        else toast("Slot " + slot + " auto-finished after removal.");
+                    });
+                } else {
+                    FirebaseHelper.clearSlot(slot, err -> {
+                        if (err != null) toast("Auto-clear failed: " + err);
+                        else toast("Slot " + slot + " auto-cleared.");
+                    });
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    private void confirmFinish(int slot, @Nullable String knownBatchId) {
+        if (finishDialogOpenFor.contains(slot)) return;
+        finishDialogOpenFor.add(slot);
+
+        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+        slotRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot ds) {
+                String batchId = (knownBatchId != null) ? knownBatchId : ds.child("batchId").getValue(String.class);
+                Integer pcs    = ds.child("pcs").getValue(Integer.class);
+                boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
+
+                AlertDialog dlg = new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Finish slot " + slot + "?")
+                        .setMessage(hasAssignment
+                                ? "Move 1 piece from In-Rack → Finished for batch " + batchId + "?"
+                                : "No batch recorded for this slot.")
+                        .setPositiveButton(hasAssignment ? "Mark Finished" : "OK", (d, w) -> {
+                            if (!hasAssignment) return;
+                            FirebaseHelper.finishSlot(slot, err -> {
+                                if (err != null) toast("Finish failed: " + err);
+                                else toast("Batch updated and slot cleared.");
+                            });
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .create();
+
+                dlg.setOnDismissListener(x -> finishDialogOpenFor.remove(slot));
+                dlg.show();
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                finishDialogOpenFor.remove(slot);
+                toast("Error: " + error.getMessage());
+            }
+        });
+    }
+
+    // ------------------ Size picker for already-assigned Active slot ------------------
+
+    private void showSizePickerForBatch(int slot, @NonNull String batchId) {
+        if (sizeDialogOpenFor.contains(slot)) return;
+        sizeDialogOpenFor.add(slot);
+
+        DatabaseReference slotRef = FirebaseDatabase.getInstance().getReference("RackSlots").child(String.valueOf(slot));
+        slotRef.child("sizeKey").get().addOnCompleteListener(prevTask -> {
+            String currentKey = null;
+            if (prevTask.isSuccessful() && prevTask.getResult() != null) {
+                Object v = prevTask.getResult().getValue();
+                currentKey = (v == null) ? null : String.valueOf(v);
+            }
+
+            String finalCurrentKey = currentKey;
+            FirebaseHelper.loadBatchSizeLines(batchId, (lines, err) -> {
+                if (err != null) { toast("Load sizes failed: " + err); sizeDialogOpenFor.remove(slot); return; }
+                List<FirebaseHelper.SizeLine> avail = new ArrayList<>();
+                for (FirebaseHelper.SizeLine sl : lines) if (sl.remaining() > 0) avail.add(sl);
+                if (avail.isEmpty()) { toast("No available sizes in " + batchId + "."); sizeDialogOpenFor.remove(slot); return; }
+
+                String[] labels = new String[avail.size()];
+                int pre = 0;
+                for (int i = 0; i < avail.size(); i++) {
+                    FirebaseHelper.SizeLine sl = avail.get(i);
+                    labels[i] = sl.remaining() + " pcs • " + sl.label();
+                    if (finalCurrentKey != null && finalCurrentKey.equals(sl.key)) pre = i;
+                }
+                final int[] sel = { pre };
+
+                AlertDialog dlg = new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Pick Size (" + batchId + ")")
+                        .setSingleChoiceItems(labels, pre, (d, which) -> sel[0] = which)
+                        .setPositiveButton("Save", (d, w) -> {
+                            FirebaseHelper.SizeLine chosen = avail.get(sel[0]);
+                            // Net adjust counts: old size -1, new size +1 (batch total net 0)
+                            FirebaseHelper.assignBatchAndSize(batchId, slot, chosen.key, err2 -> {
+                                if (err2 != null) toast("Size save failed: " + err2);
+                                else toast("Size set: " + chosen.label());
+                            });
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .create();
+
+                dlg.setOnDismissListener(x -> sizeDialogOpenFor.remove(slot));
+                dlg.show();
+            });
+        });
+    }
+
+    // ------------------ Utils ------------------
 
     private static boolean equalsIgnoreCase(String a, String b) {
         if (a == null && b == null) return true;
@@ -286,7 +423,5 @@ public class RackFragment extends Fragment {
         return a.equalsIgnoreCase(b);
     }
 
-    private void toast(String s) {
-        Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show();
-    }
+    private void toast(String s) { Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show(); }
 }

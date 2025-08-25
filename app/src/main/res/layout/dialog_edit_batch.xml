@@ -4,22 +4,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@android:color/white">
+        android:padding="20dp">
 
-        <!-- Header -->
+        <!-- Header row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
+            <!-- Batch info -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -49,8 +50,8 @@
                 android:id="@+id/tvRemaining"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 android:paddingTop="6dp"
                 android:paddingBottom="6dp"
                 android:text="Remaining: 0"
@@ -59,106 +60,73 @@
                 android:background="@drawable/bg_pill_neutral"/>
         </LinearLayout>
 
-        <!-- subtle divider -->
+        <!-- Divider -->
         <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="14dp"
             app:dividerColor="#1F5C4232"/>
 
-        <!-- Totals row -->
+        <!-- Totals -->
         <TextView
             android:id="@+id/tvTotalQty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Total: 0"
+            android:textStyle="bold"
             android:textSize="14sp"
             android:textColor="#5C4232"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="12dp"/>
 
-        <!-- In rack -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilInRack"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        <!-- SIZES (READ-ONLY, with per-size stats) -->
+        <TextView
+            android:id="@+id/tvSizesTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sizes in this batch"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="4dp"/>
+
+        <LinearLayout
+            android:id="@+id/sizesReadonlyContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="In rack (pcs)"
-            app:useMaterialThemeColors="false"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="@color/til_stroke_brown"
-            app:hintTextColor="@color/til_hint_brown">
+            android:orientation="vertical"
+            android:layout_marginTop="6dp" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etInRack"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:textColor="#2D1B12"
-                android:textColorHint="#7A7A7A"
-                android:backgroundTint="@android:color/transparent"
-                android:imeOptions="actionNext"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Finished -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilFinished"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="Finished (pcs)"
-            app:useMaterialThemeColors="false"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="@color/til_stroke_brown"
-            app:hintTextColor="@color/til_hint_brown">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etFinished"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:textColor="#2D1B12"
-                android:textColorHint="#7A7A7A"
-                android:backgroundTint="@android:color/transparent"
-                android:imeOptions="actionDone"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Actions -->
+        <!-- Actions: Close only -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancelEdit"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Cancel"
-                app:useMaterialThemeColors="false"
-                app:strokeColor="@color/btn_outline_brown"
-                app:strokeWidth="2dp"
-                android:textColor="@color/btn_text_brown"
-                app:rippleColor="@color/btn_ripple_brown"/>
+            android:layout_marginTop="20dp">
 
             <View
-                android:layout_width="12dp"
-                android:layout_height="0dp"/>
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveEdit"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Save"
-                app:useMaterialThemeColors="false"
+                android:text="Close"
                 app:backgroundTint="@color/btn_filled_brown"
                 android:textColor="@android:color/white"
                 app:rippleColor="@color/btn_ripple_brown"/>
+
+            <!-- Keep btnCancelEdit id (hidden) in case Java references exist -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelEdit"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone"
+                android:text="Cancel"/>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

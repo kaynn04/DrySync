@@ -161,7 +161,6 @@ public class InventoryFragment extends Fragment {
             // Bind
             if (h.tvBatchId != null)   h.tvBatchId.setText(batchId);
             if (h.tvQuantity != null)  h.tvQuantity.setText("Total Qty: " + total + " pcs");
-            if (h.chipArrival != null) h.chipArrival.setText(formatArrival(wb.getArrivalDateMillis()));
             if (h.tvExtra != null)     h.tvExtra.setText(formatCountsLine(inRack, finished, remaining));
 
             // Low stock badge (<= 10% of total OR <= 5 pcs; and > 0)
@@ -184,7 +183,6 @@ public class InventoryFragment extends Fragment {
     private static class BatchVH extends RecyclerView.ViewHolder {
         final View cardRoot;
         final TextView tvBatchId;
-        final Chip chipArrival;
         final TextView tvQuantity;
         final TextView tvExtra;
         final Chip chipLow;
@@ -193,7 +191,6 @@ public class InventoryFragment extends Fragment {
             super(itemView);
             cardRoot    = itemView.findViewById(R.id.cardRoot);
             tvBatchId   = itemView.findViewById(R.id.tvBatchId);
-            chipArrival = itemView.findViewById(R.id.chipArrival);
             tvQuantity  = itemView.findViewById(R.id.tvQuantity);
             tvExtra     = itemView.findViewById(R.id.tvExtra);
             chipLow     = itemView.findViewById(R.id.chipLow);

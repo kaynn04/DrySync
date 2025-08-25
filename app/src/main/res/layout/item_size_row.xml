@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="48dp">
+
+    <!-- Qty -->
+<com.google.android.material.textfield.TextInputLayout
+android:layout_width="0dp"
+android:layout_height="wrap_content"
+android:layout_weight="1.05"
+android:hint="Qty (pcs)"
+app:boxBackgroundMode="outline">
+<com.google.android.material.textfield.TextInputEditText
+    android:id="@+id/etQty"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:inputType="number"
+    android:imeOptions="actionNext"/>
+</com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Length -->
+<com.google.android.material.textfield.TextInputLayout
+android:layout_width="0dp"
+android:layout_height="wrap_content"
+android:layout_weight="1.15"
+android:layout_marginStart="8dp"
+android:hint="Length (ft)"
+app:boxBackgroundMode="outline">
+<com.google.android.material.textfield.TextInputEditText
+    android:id="@+id/etLen"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:inputType="numberDecimal"
+    android:imeOptions="actionNext"/>
+</com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Width -->
+<com.google.android.material.textfield.TextInputLayout
+android:layout_width="0dp"
+android:layout_height="wrap_content"
+android:layout_weight="1.15"
+android:layout_marginStart="8dp"
+android:hint="Width (in)"
+app:boxBackgroundMode="outline">
+<com.google.android.material.textfield.TextInputEditText
+    android:id="@+id/etWid"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:inputType="numberDecimal"
+    android:imeOptions="actionDone"/>
+</com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Delete -->
+<com.google.android.material.button.MaterialButton
+android:id="@+id/btnDelete"
+style="@style/Widget.MaterialComponents.Button.Icon"
+android:layout_width="40dp"
+android:layout_height="40dp"
+android:layout_marginStart="6dp"
+android:contentDescription="Remove"
+app:icon="@android:drawable/ic_menu_delete"
+app:backgroundTint="@android:color/transparent"/>
+    </LinearLayout>
