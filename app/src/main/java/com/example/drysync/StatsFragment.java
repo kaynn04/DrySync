@@ -1,6 +1,7 @@
 package com.example.drysync;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,14 +61,38 @@ public class StatsFragment extends Fragment {
         tvHumidAvg         = v.findViewById(R.id.tvHumidAvg);
         tvHumidTrend       = v.findViewById(R.id.tvHumidTrend);
 
+
+        FirebaseHelper.retrieveFloatData("Environment/Temperature", new FirebaseHelper.FloatDataCallback() {
+            @Override public void onFloatReceived(float value) {
+                temperatureText.setText(value + "°C");
+                setTemperature((int) value);
+                Log.e("FirebaseDebug", "Temperature: " + value);
+            }
+            @Override public void onError(String errorMessage) {
+                temperatureText.setText(errorMessage);
+                Log.e("FirebaseDebug", "Error: " + errorMessage);
+            }
+        });
+        FirebaseHelper.retrieveFloatData("Environment/Humidity", new FirebaseHelper.FloatDataCallback() {
+            @Override public void onFloatReceived(float value) {
+                humidityText.setText(value + "%");
+                setHumidity((int) value);
+                Log.e("FirebaseDebug", "Humidity: " + value);
+            }
+            @Override public void onError(String errorMessage) {
+                humidityText.setText(errorMessage);
+                Log.e("FirebaseDebug", "Error: " + errorMessage);
+            }
+        });
+
         // TODO: hook these to Firebase/live data.
         // Demo values:
-        setTemperature(25);
+        //setTemperature(25);
         setTemperatureTarget("Target: 20–35°C");
         setTemperatureLastUpdated(System.currentTimeMillis());
         setTemperatureStats(22, 31, 26.4f, +1);
 
-        setHumidity(62);
+        //setHumidity(62);
         setHumidityTarget("Ideal: 45% – 60%");
         setHumidityLastUpdated(System.currentTimeMillis());
         setHumidityStats(48, 72, 58.0f, +3);

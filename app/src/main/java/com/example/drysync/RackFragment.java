@@ -38,6 +38,25 @@ public class RackFragment extends Fragment {
     private final HashSet<Integer> finishDialogOpenFor = new HashSet<>();
     private final HashSet<Integer> promptedComplete    = new HashSet<>();
 
+    private static class MoistureHistory {
+        final List<MoistureReading> readings = new ArrayList<>();
+        void add(double m, long t) {
+            readings.add(new MoistureReading(m, t));
+            if (readings.size() > 5) readings.remove(0); // keep last 5
+        }
+    }
+
+    private final HashMap<Integer, MoistureHistory> slotHistory = new HashMap<>();
+
+
+    private static class MoistureReading {
+        double moisture;
+        long timestamp; //millis
+        MoistureReading(double m, long t) { moisture = m; timestamp = t; }
+    }
+
+    private final HashMap<Integer, MoistureReading> lastReading = new HashMap<>();
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_rack, container, false);
@@ -48,19 +67,131 @@ public class RackFragment extends Fragment {
         GridLayout gridLayout = root.findViewById(R.id.my_grid_layout);
         LayoutInflater inflater = LayoutInflater.from(getContext());
 
-        for (int i = 1; i <= 10; i++) {
+
+        for (int i = 0; i <= 9; i++) {
             View slotView = inflater.inflate(R.layout.slot_item, gridLayout, false);
 
             TextView title = slotView.findViewById(R.id.slotTitle);
             TextView tvValue = slotView.findViewById(R.id.valueText);
             Switch statusSwitch = slotView.findViewById(R.id.statusSwitch);
             LinearLayout layout = slotView.findViewById(R.id.layout);
+            TextView tvETA = slotView.findViewById(R.id.etaText);
 
-            final int slot = i;
+            final int slot = i + 1;
+            final int textSlot = i;
             title.setText("Wood Slot " + slot);
+            tvETA.setText("ETA: --");
+            tvETA.setVisibility(View.GONE); // hide until we calculate later
+
+
+
+            // -------- Listen to Readings history --------
+            DatabaseReference readingsRef = FirebaseDatabase.getInstance()
+                    .getReference("Sensors")
+                    .child(String.valueOf(textSlot))
+                    .child("Readings");
+
+            readingsRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    List<Double> moistures = new ArrayList<>();
+                    List<Long> times = new ArrayList<>();
+
+                    // Collect readings
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        try {
+                            Long ts = Long.parseLong(child.getKey()); // timestamp as key
+                            Double m = child.getValue(Double.class);
+                            if (ts != null && m != null) {
+                                times.add(ts);
+                                moistures.add(m);
+                            }
+                        } catch (Exception e) {
+                            Log.w("RackFragment", "Bad reading: " + child.getKey());
+                        }
+                    }
+
+                    if (moistures.isEmpty()) {
+                        tvETA.setVisibility(View.GONE);
+                        return;
+                    }
+
+                    // ✅ Sort by timestamp
+                    List<Integer> indices = new ArrayList<>();
+                    for (int i = 0; i < times.size(); i++) indices.add(i);
+                    indices.sort((a, b) -> Long.compare(times.get(a), times.get(b)));
+
+                    List<Long> sortedTimes = new ArrayList<>();
+                    List<Double> sortedMoistures = new ArrayList<>();
+                    for (int i : indices) {
+                        sortedTimes.add(times.get(i));
+                        sortedMoistures.add(moistures.get(i));
+                    }
+
+                    // Latest moisture
+                    double latestMoisture = sortedMoistures.get(sortedMoistures.size() - 1);
+                    tvValue.setText(String.format("%.1f%%", latestMoisture));
+
+                    String currentStatus = lastStatus.get(slot);
+                    if ("Active".equalsIgnoreCase(currentStatus) && sortedMoistures.size() >= 2) {
+                        double totalDeltaMoist = 0;
+                        double totalDeltaHours = 0;
+
+                        Log.e("test", "This is a error message to show that the rack is currently active");
+
+                        for (int i = 1; i < sortedMoistures.size(); i++) {
+                            double dMoist = sortedMoistures.get(i - 1) - sortedMoistures.get(i);
+                            double dHours = (sortedTimes.get(i) - sortedTimes.get(i - 1)) / 3600000.0;
+
+                            Log.e("test", "This is a error message to show index " + i);
+                            Log.e("test", "This is a error message to show dMoist " + dMoist);
+                            Log.e("test", "This is a error message to show dHours " + dHours);
+
+                            if (dHours > 0) {
+                                totalDeltaMoist += dMoist;
+                                totalDeltaHours += dHours;
+
+                                Log.e("test", "This is a error message to show totalDeltaHours " + totalDeltaHours);
+                            }
+                        }
+
+                        if (totalDeltaHours > 0) {
+                            double avgRate = totalDeltaMoist / totalDeltaHours; // % per hour
+                            double remaining = latestMoisture;
+
+                            Log.e("test", "This is a error message to show that the total delta hours is > 0");
+                            Log.e("test", "This is an error to show avgRate " + avgRate);
+                            Log.e("test", "This is an error to show remaining " + remaining);
+
+                            if (remaining > 0 && avgRate > 0.001) {
+                                double hoursLeft = remaining / avgRate;
+                                long minsLeft = (long) (hoursLeft * 60);
+                                long hours = minsLeft / 60;
+                                long mins = minsLeft % 60;
+                                String etaStr = hours + "h " + mins + "m";
+
+                                Log.e("test", "This is an error to show remaining > 0 and avgRate > 0.001");
+
+                                tvETA.setText("ETAs: " + etaStr);
+                                tvETA.setVisibility(View.VISIBLE);
+                            } else {
+                                tvETA.setVisibility(View.GONE);
+                            }
+                        }
+                    } else {
+                        tvETA.setVisibility(View.GONE);
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("RackFragment", "Readings error: " + error.getMessage());
+                }
+            });
+
 
             // -------- Sensor status listener --------
-            FirebaseHelper.retrieveStringData("Sensors/" + slot + "/Status", new FirebaseHelper.StringDataCallback() {
+            FirebaseHelper.retrieveStringData("Sensors/" + textSlot + "/Status", new FirebaseHelper.StringDataCallback() {
                 @Override public void onStringReceived(String value) {
                     String prev = lastStatus.get(slot);
                     String now = (value == null ? "" : value.trim());
@@ -73,12 +204,14 @@ public class RackFragment extends Fragment {
                         layout.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.rack_background));
                         title.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
                         tvValue.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
+                        tvETA.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
                     } else {
                         tvValue.setVisibility(View.VISIBLE);
                         statusSwitch.setVisibility(View.VISIBLE);
                         layout.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.rack_background_inactive));
                         title.setTextColor(Color.WHITE);
                         tvValue.setTextColor(Color.WHITE);
+                        tvETA.setTextColor(Color.WHITE);
                     }
 
                     // Switch reflects "Complete"
@@ -92,30 +225,75 @@ public class RackFragment extends Fragment {
                         });
                     }
 
-                    // Transitions
                     if (!equalsIgnoreCase(prev, "Active") && "Active".equalsIgnoreCase(now)) {
-                        // Only prompt if NOT fully assigned
                         maybePromptAssign(slot);
                     }
+
                     if (!equalsIgnoreCase(prev, "Complete") && "Complete".equalsIgnoreCase(now)) {
                         maybePromptFinish(slot);
                         promptedComplete.add(slot);
+
+                        // ✅ Clear readings when slot becomes Complete
+                        FirebaseDatabase.getInstance()
+                                .getReference("Sensors")
+                                .child(String.valueOf(textSlot))
+                                .child("Readings")
+                                .removeValue();
                     }
+
                     if ("Complete".equalsIgnoreCase(prev) && !"Complete".equalsIgnoreCase(now)) {
                         promptedComplete.remove(slot);
                     }
+
                     if (prev != null && !"Inactive".equalsIgnoreCase(prev) && "Inactive".equalsIgnoreCase(now)) {
                         handleAutoOnInactive(slot, prev);
+
+                        // ✅ Clear readings when slot becomes Inactive
+                        FirebaseDatabase.getInstance()
+                                .getReference("Sensors")
+                                .child(String.valueOf(textSlot))
+                                .child("Readings")
+                                .removeValue();
                     }
+
                 }
                 @Override public void onError(String errorMessage) {
                     Log.e("RackFragment", "Status error: " + errorMessage);
                 }
             });
 
-            // Sensor value
-            FirebaseHelper.retrieveFloatData("Sensors/" + slot + "/Value", new FirebaseHelper.FloatDataCallback() {
-                @Override public void onFloatReceived(float value) { tvValue.setText(value + "%"); }
+            FirebaseHelper.retrieveFloatData("Sensors/" + textSlot + "/Value", new FirebaseHelper.FloatDataCallback() {
+                @Override
+                public void onFloatReceived(float value) {
+                    double moisture = convertRawMoisture((int) value);
+                    tvValue.setText(String.format("%.1f%%", moisture));
+
+                    String currentStatus = lastStatus.get(slot);
+                    long now = System.currentTimeMillis();
+
+                    // Auto-complete logic stays the same
+                    if ("Active".equalsIgnoreCase(currentStatus) && moisture <= 12.0) {
+                        FirebaseDatabase.getInstance()
+                                .getReference("Sensors")
+                                .child(String.valueOf(textSlot))
+                                .child("Status")
+                                .setValue("Complete");
+                    }
+
+                    if ("Active".equalsIgnoreCase(currentStatus)) {
+                        tvETA.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
+                        tvETA.setVisibility(View.GONE); // hide until we calculate later
+
+                        // ✅ Save this reading with timestamp into Firebase (ignore 0 moisture)
+                        DatabaseReference readingsRef = FirebaseDatabase.getInstance()
+                                .getReference("Sensors")
+                                .child(String.valueOf(textSlot))
+                                .child("Readings");
+                        readingsRef.child(String.valueOf(now)).setValue(moisture);
+                    }
+                }
+
+
                 @Override public void onError(String errorMessage) {
                     Log.e("RackFragment", "Value error: " + errorMessage);
                     tvValue.setText("Error");
@@ -136,6 +314,7 @@ public class RackFragment extends Fragment {
                         String batchId = ds.child("batchId").getValue(String.class);
                         Integer pcs    = ds.child("pcs").getValue(Integer.class);
                         String sizeKey = ds.child("sizeKey").getValue(String.class);
+
                         boolean hasAssignment = (batchId != null && pcs != null && pcs > 0);
                         boolean hasSize = (sizeKey != null && !sizeKey.trim().isEmpty());
 
@@ -150,7 +329,7 @@ public class RackFragment extends Fragment {
                             } else if (!hasSize) {
                                 showSizeStep(slot, batchId); // only size missing
                             } else {
-                                showSizePickerForBatch(slot, batchId); // change size if needed
+                                toast("Slot " + slot + " already assigned with size.");
                             }
                             return;
                         }
@@ -348,8 +527,18 @@ public class RackFragment extends Fragment {
                         .setPositiveButton(hasAssignment ? "Mark Finished" : "OK", (d, w) -> {
                             if (!hasAssignment) return;
                             FirebaseHelper.finishSlot(slot, err -> {
-                                if (err != null) toast("Finish failed: " + err);
-                                else toast("Batch updated and slot cleared.");
+                                if (err != null) {
+                                    toast("Finish failed: " + err);
+                                } else {
+                                    toast("Batch updated and slot cleared.");
+
+                                    // 🔹 Explicitly reset Status → "Inactive"
+                                    FirebaseDatabase.getInstance()
+                                            .getReference("Sensors")
+                                            .child(String.valueOf(slot - 1))
+                                            .child("Status")
+                                            .setValue("Inactive");
+                                }
                             });
                         })
                         .setNegativeButton("Cancel", null)
@@ -364,6 +553,7 @@ public class RackFragment extends Fragment {
             }
         });
     }
+
 
     // ------------------ Size picker for already-assigned Active slot ------------------
 
@@ -424,4 +614,13 @@ public class RackFragment extends Fragment {
     }
 
     private void toast(String s) { Toast.makeText(requireContext(), s, Toast.LENGTH_SHORT).show(); }
+
+    private double convertRawMoisture(int input){
+        int maxInput = 1023;
+        double maxOutput = 24.0;
+
+        if (input < 0) input = 0;
+        if (input > maxInput) input = maxInput;
+        return (input / (double) maxInput ) * maxOutput;
+    }
 }

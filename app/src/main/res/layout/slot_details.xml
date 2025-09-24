@@ -17,9 +17,21 @@
         android:id="@+id/moistureText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Moisture: 18%"
+        android:text="Moistures: 18%"
         android:layout_marginTop="12dp"
         android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/etaText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ETA: --"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"/>
+
+
 
     <!-- You can add a graph here later -->
 

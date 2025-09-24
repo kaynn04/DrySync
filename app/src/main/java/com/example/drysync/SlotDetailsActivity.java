@@ -15,13 +15,10 @@ public class SlotDetailsActivity extends AppCompatActivity {
         int slotNumber = getIntent().getIntExtra("slot_number", -1);
 
         TextView title = findViewById(R.id.slotTitle);
-        TextView moisture = findViewById(R.id.moistureText);
+        TextView etaView = findViewById(R.id.etaText);
 
         title.setText("Wood Slot " + slotNumber);
-        moisture.setText("Moisture: " + getFakeMoisture(slotNumber) + "%");
+
     }
 
-    private int getFakeMoisture(int slot) {
-        return 15 + (slot % 5);  // fake moisture value for now
-    }
 }

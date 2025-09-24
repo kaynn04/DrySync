@@ -59,7 +59,7 @@
             android:paddingEnd="10dp"
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
-            android:text="In rack: 0  •  Finished: 0  •  Remaining: 0"
+            android:text="Processing: 0  •  Finished: 0  •  Remaining: 0"
             android:textSize="12sp"
             android:textColor="#6A4A3A"
             android:background="@drawable/bg_pill"/>

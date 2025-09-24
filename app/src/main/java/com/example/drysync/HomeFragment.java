@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -23,6 +24,8 @@ public class HomeFragment extends Fragment {
     private static final String SENSORS_PATH = "Sensors";
     private static final String BATCHES_PATH = "batches";
 
+    // --- Temperature views ---
+    private CircularProgressIndicator tempProgress ,humidProgress;
     private TextView temp_text, humid_text;
 
     // Tiles
@@ -42,10 +45,13 @@ public class HomeFragment extends Fragment {
         // Temperature/Humidity (your existing)
         temp_text = view.findViewById(R.id.temperature_text);
         humid_text = view.findViewById(R.id.humidity_text);
+        tempProgress = view.findViewById(R.id.tempProgress);
+        humidProgress = view.findViewById(R.id.humidProgress);
 
         FirebaseHelper.retrieveFloatData("Environment/Temperature", new FirebaseHelper.FloatDataCallback() {
             @Override public void onFloatReceived(float value) {
                 temp_text.setText(value + "°C");
+                setTemperature((int) value);
                 Log.e("FirebaseDebug", "Temperature: " + value);
             }
             @Override public void onError(String errorMessage) {
@@ -56,6 +62,7 @@ public class HomeFragment extends Fragment {
         FirebaseHelper.retrieveFloatData("Environment/Humidity", new FirebaseHelper.FloatDataCallback() {
             @Override public void onFloatReceived(float value) {
                 humid_text.setText(value + "%");
+                setHumidity((int) value);
                 Log.e("FirebaseDebug", "Humidity: " + value);
             }
             @Override public void onError(String errorMessage) {
@@ -93,6 +100,32 @@ public class HomeFragment extends Fragment {
         if (batchesRef != null && batchesListener != null) {
             batchesRef.removeEventListener(batchesListener);
             batchesListener = null;
+        }
+    }
+
+    // ===== Temperature =====
+    private void setTemperature(int celsius) {
+        if (tempProgress != null) {
+            tempProgress.setIndeterminate(false);
+            tempProgress.setMax(60);
+            int clamped = Math.max(0, Math.min(60, celsius));
+            tempProgress.setProgressCompat(clamped, true);
+        }
+        if (temp_text != null) {
+            temp_text.setText(celsius + "°C");
+        }
+    }
+
+    // ===== Humidity =====
+    private void setHumidity(int percent) {
+        if (humidProgress != null) {
+            humidProgress.setIndeterminate(false);
+            humidProgress.setMax(100);
+            int clamped = Math.max(0, Math.min(100, percent));
+            humidProgress.setProgressCompat(clamped, true);
+        }
+        if (humid_text != null) {
+            humid_text.setText(percent + "%");
         }
     }
 
