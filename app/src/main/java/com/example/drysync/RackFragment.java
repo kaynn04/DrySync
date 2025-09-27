@@ -25,6 +25,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,7 +74,7 @@ public class RackFragment extends Fragment {
             View slotView = inflater.inflate(R.layout.slot_item, gridLayout, false);
 
             TextView title = slotView.findViewById(R.id.slotTitle);
-            TextView tvValue = slotView.findViewById(R.id.valueText);
+            TextView lue = slotView.findViewById(R.id.valueText);
             Switch statusSwitch = slotView.findViewById(R.id.statusSwitch);
             LinearLayout layout = slotView.findViewById(R.id.layout);
             TextView tvETA = slotView.findViewById(R.id.etaText);
@@ -130,7 +132,13 @@ public class RackFragment extends Fragment {
 
                     // Latest moisture
                     double latestMoisture = sortedMoistures.get(sortedMoistures.size() - 1);
-                    tvValue.setText(String.format("%.1f%%", latestMoisture));
+
+                    // Calculate lower and upper bounds of a 5% range
+                    int lower = (int) (Math.floor(latestMoisture / 5.0) * 5);
+                    int upper = lower + 3;
+
+                    // Show as "xx–yy%"
+                    lue.setText(String.format("%d–%d%%", lower, upper));
 
                     String currentStatus = lastStatus.get(slot);
                     if ("Active".equalsIgnoreCase(currentStatus) && sortedMoistures.size() >= 2) {
@@ -199,18 +207,18 @@ public class RackFragment extends Fragment {
 
                     // UI
                     if ("Inactive".equalsIgnoreCase(now)) {
-                        tvValue.setVisibility(View.INVISIBLE);
+                        lue.setVisibility(View.INVISIBLE);
                         statusSwitch.setVisibility(View.INVISIBLE);
                         layout.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.rack_background));
                         title.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
-                        tvValue.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
+                        lue.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
                         tvETA.setTextColor(ContextCompat.getColor(requireContext(), R.color.brown));
                     } else {
-                        tvValue.setVisibility(View.VISIBLE);
+                        lue.setVisibility(View.VISIBLE);
                         statusSwitch.setVisibility(View.VISIBLE);
                         layout.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.rack_background_inactive));
                         title.setTextColor(Color.WHITE);
-                        tvValue.setTextColor(Color.WHITE);
+                        lue.setTextColor(Color.WHITE);
                         tvETA.setTextColor(Color.WHITE);
                     }
 
@@ -266,7 +274,14 @@ public class RackFragment extends Fragment {
                 @Override
                 public void onFloatReceived(float value) {
                     double moisture = convertRawMoisture((int) value);
-                    tvValue.setText(String.format("%.1f%%", moisture));
+
+                    // Calculate lower and upper bounds of a 5% range
+                    int lower = (int) (Math.floor(moisture / 5.0) * 5);
+                    int upper = lower + 3;
+
+                    // Show as "xx–yy%"
+                    lue.setText(String.format("%d–%d%%", lower, upper));
+
 
                     String currentStatus = lastStatus.get(slot);
                     long now = System.currentTimeMillis();
@@ -296,7 +311,7 @@ public class RackFragment extends Fragment {
 
                 @Override public void onError(String errorMessage) {
                     Log.e("RackFragment", "Value error: " + errorMessage);
-                    tvValue.setText("Error");
+                    lue.setText("Error");
                 }
             });
 
