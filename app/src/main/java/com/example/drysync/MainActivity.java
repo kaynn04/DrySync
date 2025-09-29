@@ -3,11 +3,13 @@ package com.example.drysync;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,13 +19,17 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
-// ⬇️ Add these for immersive mode
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -35,7 +41,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
     private ImageView burgerIcon;
-    
+
+    private final FirebaseAuth mAuth = FirebaseAuth.getInstance();
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,9 +59,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigationView = findViewById(R.id.navigationView);
         if (navigationView != null) {
             navigationView.setNavigationItemSelectedListener(this);
+            setupNavHeader(); // ⬅️ Populate dynamic header
         }
 
-        // Burger button from your included activity_main.xml
+        // Burger button
         burgerIcon = findViewById(R.id.burger_icon);
         if (burgerIcon != null) {
             burgerIcon.setOnClickListener(v -> {
@@ -61,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             });
         }
 
-        // Bottom nav wiring (unchanged)
+        // Bottom nav wiring
         navHome = findViewById(R.id.nav_home);
         navInventory = findViewById(R.id.nav_inventory);
         navStats = findViewById(R.id.nav_stats);
@@ -86,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         controller.hide(WindowInsetsCompat.Type.systemBars());
     }
 
-    // ⬇️ Re-apply when window regains focus (e.g., after dialogs/keyboard)
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -169,11 +177,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void confirmLogout() {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Log out")
                 .setMessage("Are you sure you want to log out?")
                 .setPositiveButton("Log out", (d, w) -> {
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                    FirebaseAuth.getInstance().signOut();
                     Intent i = new Intent(this, SplashActivity.class);
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(i);
@@ -199,4 +207,48 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    // 🔹 Setup Navigation Header dynamically (Firestore + Auth fallback)
+    public void setupNavHeader() {
+        if (navigationView == null) return;
+
+        View headerView = navigationView.getHeaderView(0);
+
+        TextView tvUserName = headerView.findViewById(R.id.tvUserName);
+        TextView tvUserEmail = headerView.findViewById(R.id.tvUserEmail);
+        ImageView imgAvatar = headerView.findViewById(R.id.imgAvatar);
+
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+
+        tvUserName.setText(user.getDisplayName() != null ? user.getDisplayName() : "User");
+        tvUserEmail.setText(user.getEmail());
+
+        // 🔸 Step 1: Try Firestore for custom avatar
+        DocumentReference ref = db.collection("users").document(user.getUid());
+        ref.get().addOnSuccessListener(snap -> {
+            if (snap.exists() && snap.contains("photoUrl")) {
+                String photoUrl = snap.getString("photoUrl");
+                if (photoUrl != null && !photoUrl.isEmpty()) {
+                    Glide.with(this)
+                            .load(photoUrl)
+                            .placeholder(R.drawable.ic_person_24)
+                            .circleCrop()
+                            .into(imgAvatar);
+                    return; // done
+                }
+            }
+
+            // 🔸 Step 2: fallback to FirebaseAuth photoUrl
+            Uri authPhoto = user.getPhotoUrl();
+            if (authPhoto != null) {
+                Glide.with(this)
+                        .load(authPhoto)
+                        .placeholder(R.drawable.ic_person_24)
+                        .circleCrop()
+                        .into(imgAvatar);
+            } else {
+                imgAvatar.setImageResource(R.drawable.ic_person_24);
+            }
+        });
+    }
 }

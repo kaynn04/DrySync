@@ -58,7 +58,7 @@
                         android:id="@+id/temperature_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="25°C"
+                        android:text="--°C"
                         android:textSize="36sp"
                         android:textStyle="bold"
                         android:textColor="@color/brown"
@@ -102,7 +102,7 @@
                             android:id="@+id/tvTempMin"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="22°C"
+                            android:text="--°C"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -128,7 +128,7 @@
                             android:id="@+id/tvTempMax"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="31°C"
+                            android:text="--°C"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -154,7 +154,7 @@
                             android:id="@+id/tvTempAvg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="26.4°C"
+                            android:text="--°C"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -180,7 +180,7 @@
                             android:id="@+id/tvTempTrend"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="+1.2°C"
+                            android:text="--°C"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -241,7 +241,7 @@
                         android:id="@+id/humidity_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="62%"
+                        android:text="--%"
                         android:textSize="36sp"
                         android:textStyle="bold"
                         android:textColor="@color/brown"
@@ -285,7 +285,7 @@
                             android:id="@+id/tvHumidMin"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="48%"
+                            android:text="--%"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -311,7 +311,7 @@
                             android:id="@+id/tvHumidMax"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="72%"
+                            android:text="--%"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -337,7 +337,7 @@
                             android:id="@+id/tvHumidAvg"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="58%"
+                            android:text="--%"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>
@@ -363,7 +363,7 @@
                             android:id="@+id/tvHumidTrend"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="+3%"
+                            android:text="--%"
                             android:textStyle="bold"
                             android:textSize="20sp"
                             android:textColor="@color/brown"/>

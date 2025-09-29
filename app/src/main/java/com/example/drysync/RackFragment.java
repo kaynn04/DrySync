@@ -270,6 +270,7 @@ public class RackFragment extends Fragment {
                 }
             });
 
+
             FirebaseHelper.retrieveFloatData("Sensors/" + textSlot + "/Value", new FirebaseHelper.FloatDataCallback() {
                 @Override
                 public void onFloatReceived(float value) {
