@@ -79,6 +79,14 @@
                     android:layout_height="wrap_content"
                     android:text="Last update: —"
                     android:textColor="#8A5C4231"/>
+                
+                <TextView
+                    android:id="@+id/tvTempStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Status: --"
+                    android:textColor="#8A5C4231"
+                    android:layout_marginTop="4dp"/>
 
                 <!-- 2-column grid of mini tiles -->
                 <GridLayout
@@ -262,6 +270,15 @@
                     android:layout_height="wrap_content"
                     android:text="Last update: —"
                     android:textColor="#8A5C4231"/>
+
+                <TextView
+                    android:id="@+id/tvHumidStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Status: —"
+                    android:textColor="#8A5C4231"
+                    android:layout_marginTop="4dp"/>
+
 
                 <!-- Quick stats grid -->
                 <GridLayout

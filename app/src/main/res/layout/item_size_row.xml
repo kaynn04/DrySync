@@ -6,12 +6,12 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp"
+    android:padding="10dp"
+    android:minHeight="48dp"
     android:clickable="true"
     android:focusable="true"
-    android:background="?attr/selectableItemBackground"
-    android:minHeight="48dp">
+    android:descendantFocusability="afterDescendants"
+    android:background="?attr/selectableItemBackground">
 
     <!-- Qty -->
 <com.google.android.material.textfield.TextInputLayout
@@ -61,13 +61,13 @@ app:boxBackgroundMode="outline">
 </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Delete -->
-<com.google.android.material.button.MaterialButton
-android:id="@+id/btnDelete"
-style="@style/Widget.MaterialComponents.Button.Icon"
-android:layout_width="40dp"
-android:layout_height="40dp"
-android:layout_marginStart="6dp"
-android:contentDescription="Remove"
-app:icon="@android:drawable/ic_menu_delete"
-app:backgroundTint="@android:color/transparent"/>
-    </LinearLayout>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDelete"
+        style="@style/Widget.MaterialComponents.Button.Icon"
+        android:layout_width="40dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="6dp"
+        android:contentDescription="Remove"
+        app:backgroundTint="@color/brown"
+        app:icon="@android:drawable/ic_menu_delete" />
+</LinearLayout>

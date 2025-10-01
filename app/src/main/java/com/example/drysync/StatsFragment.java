@@ -1,7 +1,6 @@
 package com.example.drysync;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +13,9 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class StatsFragment extends Fragment {
@@ -23,11 +24,29 @@ public class StatsFragment extends Fragment {
     private CircularProgressIndicator tempProgress;
     private TextView temperatureText, tvTempTarget, tvTempLastUpdated;
     private TextView tvTempMin, tvTempMax, tvTempAvg, tvTempTrend;
+    private TextView tvTempStatus; // NEW: shows status vs target range
 
     // --- Humidity views ---
     private CircularProgressIndicator humidProgress;
     private TextView humidityText, tvHumidTarget, tvHumidLastUpdated;
     private TextView tvHumidMin, tvHumidMax, tvHumidAvg, tvHumidTrend;
+    private TextView tvHumidStatus; // NEW: shows status vs target range
+
+    // Rolling datasets for last 24h
+    private final List<Sample> tempHistory = new ArrayList<>();
+    private final List<Sample> humidHistory = new ArrayList<>();
+
+    private static class Sample {
+        long timeMillis;
+        float value;
+        Sample(long t, float v) { timeMillis = t; value = v; }
+    }
+
+    // Target ranges for wood drying environment
+    private static final int TEMP_MIN_TARGET = 20;  // °C
+    private static final int TEMP_MAX_TARGET = 35;  // °C
+    private static final int HUMID_MIN_TARGET = 45; // %
+    private static final int HUMID_MAX_TARGET = 60; // %
 
     public StatsFragment() { }
 
@@ -50,6 +69,7 @@ public class StatsFragment extends Fragment {
         tvTempMax          = v.findViewById(R.id.tvTempMax);
         tvTempAvg          = v.findViewById(R.id.tvTempAvg);
         tvTempTrend        = v.findViewById(R.id.tvTempTrend);
+        tvTempStatus       = v.findViewById(R.id.tvTempStatus); // NEW
 
         // --- bind Humidity ---
         humidProgress      = v.findViewById(R.id.humidProgress);
@@ -60,42 +80,34 @@ public class StatsFragment extends Fragment {
         tvHumidMax         = v.findViewById(R.id.tvHumidMax);
         tvHumidAvg         = v.findViewById(R.id.tvHumidAvg);
         tvHumidTrend       = v.findViewById(R.id.tvHumidTrend);
+        tvHumidStatus      = v.findViewById(R.id.tvHumidStatus); // NEW
 
-
+        // Firebase callbacks
         FirebaseHelper.retrieveFloatData("Environment/Temperature", new FirebaseHelper.FloatDataCallback() {
             @Override public void onFloatReceived(float value) {
-                temperatureText.setText(value + "°C");
-                setTemperature((int) value);
-                Log.e("FirebaseDebug", "Temperature: " + value);
+                long now = System.currentTimeMillis();
+                addSample(tempHistory, now, value, 24 * 60 * 60 * 1000L);
+                updateTemperatureStats();
+                setTemperature((int) value); // also updates status
+                setTemperatureLastUpdated(now);
             }
             @Override public void onError(String errorMessage) {
                 temperatureText.setText(errorMessage);
-                Log.e("FirebaseDebug", "Error: " + errorMessage);
             }
         });
+
         FirebaseHelper.retrieveFloatData("Environment/Humidity", new FirebaseHelper.FloatDataCallback() {
             @Override public void onFloatReceived(float value) {
-                humidityText.setText(value + "%");
-                setHumidity((int) value);
-                Log.e("FirebaseDebug", "Humidity: " + value);
+                long now = System.currentTimeMillis();
+                addSample(humidHistory, now, value, 24 * 60 * 60 * 1000L);
+                updateHumidityStats();
+                setHumidity((int) value); // also updates status
+                setHumidityLastUpdated(now);
             }
             @Override public void onError(String errorMessage) {
                 humidityText.setText(errorMessage);
-                Log.e("FirebaseDebug", "Error: " + errorMessage);
             }
         });
-
-        // TODO: hook these to Firebase/live data.
-        // Demo values:
-        //setTemperature(25);
-        setTemperatureTarget("Target: 20–35°C");
-        setTemperatureLastUpdated(System.currentTimeMillis());
-        setTemperatureStats(22, 31, 26.4f, +1);
-
-        //setHumidity(62);
-        setHumidityTarget("Ideal: 45% – 60%");
-        setHumidityLastUpdated(System.currentTimeMillis());
-        setHumidityStats(48, 72, 58.0f, +3);
     }
 
     // ===== Temperature =====
@@ -108,6 +120,20 @@ public class StatsFragment extends Fragment {
         }
         if (temperatureText != null) {
             temperatureText.setText(celsius + "°C");
+        }
+
+        // Update status label (wood drying target check)
+        if (tvTempStatus != null) {
+            if (celsius < TEMP_MIN_TARGET) {
+                tvTempStatus.setText("Status: Too Low");
+                tvTempStatus.setTextColor(getResources().getColor(android.R.color.holo_blue_dark));
+            } else if (celsius > TEMP_MAX_TARGET) {
+                tvTempStatus.setText("Status: Too High");
+                tvTempStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+            } else {
+                tvTempStatus.setText("Status: OK");
+                tvTempStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            }
         }
     }
 
@@ -122,12 +148,6 @@ public class StatsFragment extends Fragment {
         }
     }
 
-    /**
-     * @param min       min temp in last 24h (°C)
-     * @param max       max temp in last 24h (°C)
-     * @param average   average temp in last 24h (°C)
-     * @param delta1h   change vs 1 hour ago (°C), can be negative
-     */
     private void setTemperatureStats(int min, int max, float average, int delta1h) {
         if (tvTempMin != null)  tvTempMin.setText(min + "°C");
         if (tvTempMax != null)  tvTempMax.setText(max + "°C");
@@ -146,6 +166,20 @@ public class StatsFragment extends Fragment {
         if (humidityText != null) {
             humidityText.setText(percent + "%");
         }
+
+        // Update status label (wood drying target check)
+        if (tvHumidStatus != null) {
+            if (percent < HUMID_MIN_TARGET) {
+                tvHumidStatus.setText("Status: Too Low");
+                tvHumidStatus.setTextColor(getResources().getColor(android.R.color.holo_blue_dark));
+            } else if (percent > HUMID_MAX_TARGET) {
+                tvHumidStatus.setText("Status: Too High");
+                tvHumidStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+            } else {
+                tvHumidStatus.setText("Status: OK");
+                tvHumidStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            }
+        }
     }
 
     private void setHumidityTarget(@NonNull String txt) {
@@ -159,12 +193,6 @@ public class StatsFragment extends Fragment {
         }
     }
 
-    /**
-     * @param min       min RH% in last 24h
-     * @param max       max RH% in last 24h
-     * @param average   average RH% in last 24h
-     * @param delta1h   change vs 1 hour ago (percentage points), can be negative
-     */
     private void setHumidityStats(int min, int max, float average, int delta1h) {
         if (tvHumidMin != null)   tvHumidMin.setText(min + "%");
         if (tvHumidMax != null)   tvHumidMax.setText(max + "%");
@@ -172,14 +200,63 @@ public class StatsFragment extends Fragment {
         if (tvHumidTrend != null) tvHumidTrend.setText(formatSigned(delta1h) + "%");
     }
 
+    // === Rolling dataset helpers ===
+    private void addSample(List<Sample> history, long now, float value, long windowMillis) {
+        history.add(new Sample(now, value));
+        long cutoff = now - windowMillis;
+        while (!history.isEmpty() && history.get(0).timeMillis < cutoff) {
+            history.remove(0);
+        }
+    }
+
+    private void updateTemperatureStats() {
+        if (tempHistory.isEmpty()) return;
+        float min = Float.MAX_VALUE, max = Float.MIN_VALUE, sum = 0;
+        for (Sample s : tempHistory) {
+            min = Math.min(min, s.value);
+            max = Math.max(max, s.value);
+            sum += s.value;
+        }
+        float avg = sum / tempHistory.size();
+        long oneHourAgo = System.currentTimeMillis() - 3600_000;
+        float value1hAgo = tempHistory.get(0).value;
+        for (int i = tempHistory.size() - 1; i >= 0; i--) {
+            if (tempHistory.get(i).timeMillis <= oneHourAgo) {
+                value1hAgo = tempHistory.get(i).value;
+                break;
+            }
+        }
+        int delta1h = Math.round(tempHistory.get(tempHistory.size() - 1).value - value1hAgo);
+        setTemperatureStats(Math.round(min), Math.round(max), avg, delta1h);
+    }
+
+    private void updateHumidityStats() {
+        if (humidHistory.isEmpty()) return;
+        float min = Float.MAX_VALUE, max = Float.MIN_VALUE, sum = 0;
+        for (Sample s : humidHistory) {
+            min = Math.min(min, s.value);
+            max = Math.max(max, s.value);
+            sum += s.value;
+        }
+        float avg = sum / humidHistory.size();
+        long oneHourAgo = System.currentTimeMillis() - 3600_000;
+        float value1hAgo = humidHistory.get(0).value;
+        for (int i = humidHistory.size() - 1; i >= 0; i--) {
+            if (humidHistory.get(i).timeMillis <= oneHourAgo) {
+                value1hAgo = humidHistory.get(i).value;
+                break;
+            }
+        }
+        int delta1h = Math.round(humidHistory.get(humidHistory.size() - 1).value - value1hAgo);
+        setHumidityStats(Math.round(min), Math.round(max), avg, delta1h);
+    }
+
     // ===== helpers =====
     private String formatOneDecimal(float value) {
-        // Uses current locale (e.g., 26.4)
         return String.format(Locale.getDefault(), "%.1f", value);
     }
 
     private String formatSigned(int value) {
-        // Adds + for positive, keeps 0, and – for negative
         return (value > 0 ? "+" : "") + value;
     }
 }

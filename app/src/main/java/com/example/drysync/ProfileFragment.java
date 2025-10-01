@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -30,7 +29,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,11 +45,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-// at the top of the file:
-import android.content.Context;
-import android.content.SharedPreferences;
-
-
 public class ProfileFragment extends Fragment {
 
     // 🔧 Replace with your Cloudinary details
@@ -60,7 +53,8 @@ public class ProfileFragment extends Fragment {
 
     private ImageView imgAvatar, btnChangeAvatar;
     private TextInputEditText etName, etEmail, etPhone, etCurrentPassword, etNewPassword, etConfirmPassword;
-    private MaterialButton btnSave;
+    private MaterialButton btnSave, btnEdit, btnCancel;
+    private View passwordSection;
 
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -90,15 +84,41 @@ public class ProfileFragment extends Fragment {
         etNewPassword = v.findViewById(R.id.etNewPassword);
         etConfirmPassword = v.findViewById(R.id.etConfirmPassword);
         btnSave = v.findViewById(R.id.btnSave);
+        btnEdit = v.findViewById(R.id.btnEdit);
+        btnCancel = v.findViewById(R.id.btnCancel);
+        passwordSection = v.findViewById(R.id.passwordSection);
 
+        // 🔹 Start in read-only mode
+        setEditable(false);
+        passwordSection.setVisibility(View.GONE);
+        btnSave.setVisibility(View.GONE);
+        btnCancel.setVisibility(View.GONE);
+
+        // 🔹 Edit button logic
+        btnEdit.setOnClickListener(view -> {
+            setEditable(true);
+            passwordSection.setVisibility(View.VISIBLE);
+            btnSave.setVisibility(View.VISIBLE);
+            btnCancel.setVisibility(View.VISIBLE);
+            btnEdit.setVisibility(View.GONE);
+        });
+
+        // 🔹 Cancel button logic
+        btnCancel.setOnClickListener(view -> {
+            setEditable(false);
+            passwordSection.setVisibility(View.GONE);
+            btnSave.setVisibility(View.GONE);
+            btnCancel.setVisibility(View.GONE);
+            btnEdit.setVisibility(View.VISIBLE);
+            clearPasswordFields();
+        });
+
+        // Avatar picker
         pickImageLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
-                new ActivityResultCallback<Uri>() {
-                    @Override
-                    public void onActivityResult(Uri uri) {
-                        if (uri != null) {
-                            pendingAvatarUri = uri;
-                            imgAvatar.setImageURI(uri); // preview local
-                        }
+                uri -> {
+                    if (uri != null) {
+                        pendingAvatarUri = uri;
+                        imgAvatar.setImageURI(uri); // preview local
                     }
                 });
 
@@ -109,18 +129,26 @@ public class ProfileFragment extends Fragment {
         btnSave.setOnClickListener(view -> saveToCloudAndFirebase());
     }
 
+    private void setEditable(boolean enable) {
+        etName.setEnabled(enable);
+        etEmail.setEnabled(enable);
+        etPhone.setEnabled(enable);
+
+        etName.setFocusableInTouchMode(enable);
+        etEmail.setFocusableInTouchMode(enable);
+        etPhone.setFocusableInTouchMode(enable);
+    }
+
     private void loadFromFirebase() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) { toast("Not logged in"); return; }
 
         user.reload().addOnCompleteListener(t -> {
-           if(!TextUtils.isEmpty(user.getDisplayName())) etName.setText(user.getDisplayName());
-           if(!TextUtils.isEmpty(user.getEmail())) etEmail.setText(user.getEmail());
+            if(!TextUtils.isEmpty(user.getDisplayName())) etName.setText(user.getDisplayName());
+            if(!TextUtils.isEmpty(user.getEmail())) etEmail.setText(user.getEmail());
 
-//           1. Try Auth photoUrl first
             Uri authPhoto = user.getPhotoUrl();
             if (authPhoto != null) {
-//                load remote image with Glide
                 Glide.with(this).load(authPhoto.toString())
                         .placeholder(R.drawable.profile)
                         .error(R.drawable.profile)
@@ -128,7 +156,6 @@ public class ProfileFragment extends Fragment {
                         .into(imgAvatar);
             }
 
-//            2. Read Firestore in case you mirrored it there
             DocumentReference ref = db.collection("users").document(user.getUid());
             ref.get().addOnSuccessListener(snap -> {
                 if(snap.exists()) {
@@ -176,7 +203,6 @@ public class ProfileFragment extends Fragment {
 
         runWithProgress(true);
 
-        // If a new avatar is chosen, upload to Cloudinary first; else proceed to Auth/Firestore.
         if (pendingAvatarUri != null) {
             uploadToCloudinary(pendingAvatarUri, new CloudinaryCallback() {
                 @Override
@@ -197,7 +223,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    // ----- Cloudinary unsigned upload -----
     private interface CloudinaryCallback {
         void onSuccess(String secureUrl);
         void onError(String message);
@@ -212,8 +237,6 @@ public class ProfileFragment extends Fragment {
                     .addFormDataPart("file", "avatar.jpg",
                             RequestBody.create(data, MediaType.parse("image/jpeg")))
                     .addFormDataPart("upload_preset", UPLOAD_PRESET)
-                    // Optional: auto-foldering (if set in preset) or:
-                    // .addFormDataPart("folder", "avatars")
                     .build();
 
             String url = "https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/image/upload";
@@ -261,7 +284,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    // ----- Update Auth + Firestore (no Storage) -----
     private void updateAuthProfileAndFirestore(FirebaseUser user,
                                                String name,
                                                String email,
@@ -271,14 +293,12 @@ public class ProfileFragment extends Fragment {
                                                String currentPassword,
                                                String newPassword) {
 
-        // 1) Update Auth profile (displayName & photo)
         UserProfileChangeRequest.Builder b = new UserProfileChangeRequest.Builder()
                 .setDisplayName(name);
         if (!TextUtils.isEmpty(photoUrl)) b.setPhotoUri(Uri.parse(photoUrl));
 
         user.updateProfile(b.build())
                 .addOnSuccessListener(unused -> {
-                    // 2) Save extras to Firestore
                     Map<String, Object> data = new HashMap<>();
                     data.put("displayName", name);
                     data.put("email", email);
@@ -310,6 +330,7 @@ public class ProfileFragment extends Fragment {
             runWithProgress(false);
             toast("Profile saved");
             clearPasswordFields();
+            resetToReadOnly(); // 🔹 reset UI after save
             return;
         }
 
@@ -333,10 +354,19 @@ public class ProfileFragment extends Fragment {
             runWithProgress(false);
             toast("Profile saved");
             clearPasswordFields();
+            resetToReadOnly(); // 🔹 reset UI after save
         }).addOnFailureListener(e -> {
             runWithProgress(false);
             toast("Re-auth failed: " + e.getMessage());
         });
+    }
+
+    private void resetToReadOnly() {
+        setEditable(false);
+        passwordSection.setVisibility(View.GONE);
+        btnSave.setVisibility(View.GONE);
+        btnCancel.setVisibility(View.GONE);
+        btnEdit.setVisibility(View.VISIBLE);
     }
 
     private void clearPasswordFields() {
@@ -345,13 +375,12 @@ public class ProfileFragment extends Fragment {
         etConfirmPassword.setText("");
     }
 
-    // ----- small utils -----
     private String textOf(TextInputEditText et) {
         return et.getText() == null ? "" : et.getText().toString().trim();
     }
 
     private void runWithProgress(boolean running) {
-        // TODO hook a ProgressBar/Dialog if you like
+        btnSave.setEnabled(!running);
     }
 
     private void runOnUi(Runnable r) {

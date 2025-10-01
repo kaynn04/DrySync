@@ -48,6 +48,7 @@ public class RackFragment extends Fragment {
         }
     }
 
+
     private final HashMap<Integer, MoistureHistory> slotHistory = new HashMap<>();
 
 
@@ -548,12 +549,18 @@ public class RackFragment extends Fragment {
                                 } else {
                                     toast("Batch updated and slot cleared.");
 
-                                    // 🔹 Explicitly reset Status → "Inactive"
-                                    FirebaseDatabase.getInstance()
+                                    DatabaseReference sensorRef = FirebaseDatabase.getInstance()
                                             .getReference("Sensors")
-                                            .child(String.valueOf(slot - 1))
-                                            .child("Status")
-                                            .setValue("Inactive");
+                                            .child(String.valueOf(slot - 1));
+
+                                    // 🔹 Explicitly reset Status → "Inactive"
+                                    sensorRef.child("Status").setValue("Inactive");
+
+                                    // 🔹 Reset Value → 0
+                                    sensorRef.child("Value").setValue(0);
+
+                                    // 🔹 Clear readings history (optional)
+                                    sensorRef.child("Readings").removeValue();
                                 }
                             });
                         })
@@ -569,6 +576,7 @@ public class RackFragment extends Fragment {
             }
         });
     }
+
 
 
     // ------------------ Size picker for already-assigned Active slot ------------------
